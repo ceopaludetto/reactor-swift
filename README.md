@@ -15,7 +15,7 @@ This project is also a monorepo with shared dependencies between each other
 
 ## VSCode
 
-You will need theses extensions:
+You will need these extensions:
 
 - [Swift](https://marketplace.visualstudio.com/items?itemName=sswg.swift-lang)
 - [Apple SwiftFormat](https://github.com/vknabel/vscode-apple-swift-format)
