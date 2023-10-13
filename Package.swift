@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
   name: "Reactor",
   platforms: [
-    .macOS(.v10_15)
+    .macOS(.v13)
   ],
   products: [
     // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -17,8 +17,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.5.3")),
     .package(url: "https://github.com/apple/swift-atomics.git", .upToNextMajor(from: "1.2.0")),
     .package(url: "https://github.com/Quick/Quick.git", .upToNextMajor(from: "7.0.0")),
-    .package(url: "https://github.com/Quick/Nimble.git", .upToNextMajor(from: "12.0.0")),
-    .package(url: "https://github.com/apple/swift-format.git", branch: ("release/5.9")),
+    .package(url: "https://github.com/Quick/Nimble.git", .upToNextMajor(from: "12.0.0"))
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -34,8 +33,9 @@ let package = Package(
         "ReactiveStreams",
         "Quick",
         "Nimble",
-        .product(name: "Logging", package: "swift-log"),
-      ]),
+      	.product(name: "Logging", package: "swift-log"),
+ 			]
+		),
     .testTarget(name: "ReactorTests", dependencies: ["TCK", "Reactor", "Quick", "Nimble"]),
   ]
 )

@@ -13,11 +13,19 @@ struct JustPublisherTCK: PublisherVerification {
   }
 
   func createFailedPublisher() -> (any Publisher<Item>)? {
-    return nil
+    enum JustError: Error {
+      case just
+    }
+
+    return MapPublisher({ _ in throw JustError.just }, JustPublisher(0...1))
   }
 
   func maxElementsFromPublisher() -> UInt {
-    return .max - 1
+    return .max
+  }
+
+  func boundedDepthOfOnNextAndRequestRecursion() -> UInt {
+    return 1
   }
 }
 

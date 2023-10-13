@@ -10,13 +10,8 @@ internal class EmptyPublisher<T>: Publisher {
 }
 
 internal class EmptySubscription: Subscription {
-  func request(_ demand: UInt) {
-    // noop
-  }
-
-  func cancel() {
-    // noop
-  }
+  func request(_ demand: UInt) {}
+  func cancel() {}
 }
 
 extension Flux {

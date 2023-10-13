@@ -8,4 +8,6 @@ public protocol PublisherVerification {
   func createFailedPublisher() -> (any Publisher<Item>)?
 
   func maxElementsFromPublisher() -> UInt
+
+  func boundedDepthOfOnNextAndRequestRecursion() -> UInt
 }

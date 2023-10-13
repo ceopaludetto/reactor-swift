@@ -21,21 +21,21 @@ internal class JustPublisher<T, S: Sequence<T>>: Publisher {
 }
 
 internal class JustSubscription<T, S: Sequence<T>>: Subscription {
-  private var subscriber: any Subscriber<T>
+  private var actual: any Subscriber<T>
   private var items: PeekableIterator<S.Iterator>
 
   private let cancelled: ManagedAtomic<Bool> = .init(false)
   private let requested: ManagedAtomic<UInt> = .init(0)
 
   init(subscriber: any Subscriber<T>, items: S.Iterator) {
-    self.subscriber = subscriber
+    self.actual = subscriber
     self.items = PeekableIterator(items)
   }
 
   func request(_ demand: UInt) {
     if case .failure(let error) = Validator.demand(demand) {
       cancel()
-      subscriber.onError(error)
+      actual.onError(error)
 
       return
     }
@@ -61,11 +61,11 @@ internal class JustSubscription<T, S: Sequence<T>>: Subscription {
       }
 
       if let item = items.next() {
-        subscriber.onNext(item)
+        actual.onNext(item)
       }
 
       if items.peek() == nil {
-        subscriber.onComplete()
+        actual.onComplete()
         return
       }
     }
@@ -83,11 +83,11 @@ internal class JustSubscription<T, S: Sequence<T>>: Subscription {
 
         if let item = items.next() {
           sent += 1
-          subscriber.onNext(item)
+          actual.onNext(item)
         }
 
         if items.peek() == nil {
-          subscriber.onComplete()
+          actual.onComplete()
           return
         }
       }
@@ -106,7 +106,7 @@ internal class JustSubscription<T, S: Sequence<T>>: Subscription {
 }
 
 extension Flux {
-  static func just(_ items: some Sequence<T>) -> Flux<T> {
+  public static func just(_ items: some Sequence<T>) -> Flux<T> {
     return Flux(publisher: JustPublisher(items))
   }
 }

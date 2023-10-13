@@ -1,32 +1,33 @@
 import ReactiveStreams
 
-internal class MapPublisher<T, R>: Publisher {
+internal class IndexPublisher<T, R>: Publisher {
   typealias Item = R
 
-  private let mapper: (T) throws -> R
   private let source: any Publisher<T>
+  private let mapper: (UInt, T) throws -> R
 
-  init(_ mapper: @escaping (T) throws -> R, _ publisher: some Publisher<T>) {
+  init(_ mapper: @escaping (UInt, T) throws -> R, _ publisher: some Publisher<T>) {
     self.mapper = mapper
     self.source = publisher
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(MapOperator(mapper, subscriber))
+    self.source.subscribe(IndexOperator(mapper, subscriber))
   }
 }
 
-internal class MapOperator<T, R>: Subscriber, Subscription {
+internal class IndexOperator<T, R>: Subscriber, Subscription {
   typealias Item = T
 
-  private let mapper: (T) throws -> R
+  private let mapper: (UInt, T) throws -> R
 
   private var actual: any Subscriber<R>
   private var subscription: (any Subscription)?
 
   private var done: Bool = false
+  private var index: UInt = 0
 
-  init(_ mapper: @escaping (T) throws -> R, _ actual: any Subscriber<R>) {
+  init(_ mapper: @escaping (UInt, T) throws -> R, _ actual: any Subscriber<R>) {
     self.mapper = mapper
     self.actual = actual
   }
@@ -41,8 +42,9 @@ internal class MapOperator<T, R>: Subscriber, Subscription {
       return
     }
 
+    defer { index += 1 }
     do {
-      actual.onNext(try mapper(element))
+      actual.onNext(try mapper(index, element))
     } catch {
       onError(error)
     }
@@ -76,7 +78,11 @@ internal class MapOperator<T, R>: Subscriber, Subscription {
 }
 
 extension Flux {
-  public func map<R>(_ mapper: @escaping (T) -> R) -> Flux<R> {
-    return Flux<R>(publisher: MapPublisher(mapper, self.publisher))
+  public func index() -> Flux<(UInt, T)> {
+    return Flux<(UInt, T)>(publisher: IndexPublisher({ ($0, $1) }, publisher))
+  }
+
+  public func index<R>(_ mapper: @escaping (UInt, T) throws -> R) -> Flux<R> {
+    return Flux<R>(publisher: IndexPublisher(mapper, publisher))
   }
 }

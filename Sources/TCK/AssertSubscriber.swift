@@ -2,62 +2,80 @@ import Foundation
 import Nimble
 import ReactiveStreams
 
+enum CallType: Equatable {
+  case onSubscribe, onNext, onError, onComplete
+}
+
 class AssertSubscriber<T>: Subscriber {
   typealias Item = T
 
-  var subscription: (any Subscription)?
+  let timeout: TimeInterval
+
+  var registeredCalls: [CallType] = []
 
   let produced: BlockingQueue<T> = .init()
   let errors: BlockingQueue<Error> = .init()
 
-  var completed = false
+  let subscription: ConditionalVariable<Subscription> = .init()
+  let completion: ConditionalVariable<Bool> = .init()
 
-  let subscriptionSemaphore: DispatchSemaphore = .init(value: 0)
-  let completionSemaphore: DispatchSemaphore = .init(value: 0)
+  var customOnNextCallbacks: [((T) -> Void)] = []
+
+  required init(timeout: TimeInterval = 10) {
+    self.timeout = timeout
+  }
 
   func onSubscribe(_ subscription: some Subscription) {
     logger.debug("onSubscribe()")
 
-    self.subscription = subscription
-    subscriptionSemaphore.signal()
+    self.subscription.dispatch(subscription)
+    registeredCalls.append(.onSubscribe)
   }
 
   func onNext(_ element: T) {
     logger.debug("onNext(\(element))")
     produced.add(element)
+
+    for callback in customOnNextCallbacks {
+      callback(element)
+    }
+
+    registeredCalls.append(.onNext)
   }
 
   func onError(_ error: Error) {
     logger.debug("onError(\(error))")
     errors.add(error)
+
+    registeredCalls.append(.onError)
   }
 
   func onComplete() {
     logger.debug("onComplete()")
 
-    self.completed = true
-    completionSemaphore.signal()
+    completion.dispatch(true)
+    registeredCalls.append(.onComplete)
   }
 
   func requestNext(_ demand: UInt = 1) {
-    if self.subscription == nil {
+    guard let subscription = self.subscription.waitForValue() else {
       fatalError("Subscription not set")
     }
 
-    self.subscription!.request(demand)
+    subscription.request(demand)
   }
 
   func cancel() {
-    if self.subscription == nil {
+    guard let subscription = self.subscription.waitForValue() else {
       fatalError("Subscription not set")
     }
 
-    self.subscription!.cancel()
+    subscription.cancel()
   }
 
   @discardableResult
   func expectSubscription() -> Subscription {
-    subscriptionSemaphore.wait()
+    let subscription = self.subscription.waitForValue(timeout)
     expect(self.subscription).notTo(beNil())
 
     return subscription!
@@ -65,7 +83,7 @@ class AssertSubscriber<T>: Subscriber {
 
   @discardableResult
   func expectNext(_ elements: Int) -> [T] {
-    let produced = self.produced.takeAll(.now() + 0.1)
+    let produced = self.produced.takeAll(self.timeout)
 
     expect(produced)
       .to(haveCount(elements), description: "expectNext called but no elements produced")
@@ -75,7 +93,7 @@ class AssertSubscriber<T>: Subscriber {
 
   @discardableResult
   func expectNextOrNone(_ elements: Int) -> [T] {
-    let produced = self.produced.takeAll(.now() + 0.1)
+    let produced = self.produced.takeAll(self.timeout)
 
     if !produced.isEmpty {
       expect(produced)
@@ -95,18 +113,36 @@ class AssertSubscriber<T>: Subscriber {
     return item!
   }
 
+  @discardableResult
+  func expectAnyError() -> Error? {
+    let captured = self.errors.take(self.timeout)
+    expect(captured).notTo(beNil())
+
+    return captured
+  }
+
+  @discardableResult
+  func expectError<E: Error>(_ error: E) -> Error? {
+    let captured = self.errors.take(self.timeout)
+    expect(captured).to(beAKindOf(E.self))
+
+    return captured
+  }
+
   func expectNoErrors() {
-    expect(self.errors.takeAll(.now() + 0.1)).to(beEmpty())
+    expect(self.errors.takeAll(self.timeout)).to(beEmpty())
   }
 
   func expectNone() {
-    expect(self.produced.takeAll(.now() + 0.1)).to(beEmpty())
+    expect(self.produced.takeAll(self.timeout)).to(beEmpty())
   }
 
   func expectCompletion() {
-    expect(self.completionSemaphore.wait(timeout: .now() + 10) == DispatchTimeoutResult.success)
-      .to(beTrue(), description: "expectCompletion timed out")
+    let completed = self.completion.waitForValue(self.timeout)
+    expect(completed).to(beTrue())
+  }
 
-    expect(self.completed).to(beTrue())
+  func registerCustomOnNextCallback(_ callback: @escaping (T) -> Void) {
+    customOnNextCallbacks.append(callback)
   }
 }

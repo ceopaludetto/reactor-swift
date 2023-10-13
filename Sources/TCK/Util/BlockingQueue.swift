@@ -1,29 +1,37 @@
 import Foundation
 
 class BlockingQueue<T> {
-  private let array: ConcurrentArray<T> = .init()
-  private let semaphore: DispatchSemaphore = .init(value: 0)
+  private var array: [T] = []
+  private var group: DispatchGroup = .init()
 
   func add(_ element: T) {
-    array.append(element)
-    semaphore.signal()
+    group.enter()
+
+    DispatchQueue.global().sync {
+      array.append(element)
+      group.leave()
+    }
   }
 
-  func take(_ timeout: DispatchTime = .distantFuture) -> T? {
-    if case .timedOut = semaphore.wait(timeout: timeout) {
+  func take(_ timeout: TimeInterval? = nil) -> T? {
+    if case .timedOut = group.wait(timeout: timeout.toDispatchTime()) {
+      return nil
+    }
+
+    if array.isEmpty {
       return nil
     }
 
     return array.removeFirst()
   }
 
-  func takeAll(_ timeout: DispatchTime = .distantFuture) -> [T] {
-    if case .timedOut = semaphore.wait(timeout: timeout) {
+  func takeAll(_ timeout: TimeInterval? = nil) -> [T] {
+    if case .timedOut = group.wait(timeout: timeout.toDispatchTime()) {
       return []
     }
 
     var elements: [T] = []
-    while !array.isEmpty() {
+    while !array.isEmpty {
       elements.append(array.removeFirst())
     }
 

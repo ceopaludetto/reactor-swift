@@ -83,7 +83,7 @@ internal class TakeWhileOperator<T>: Subscriber, Subscription {
 }
 
 extension Flux {
-  func takeWhile(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
+  public func takeWhile(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
     return Flux(publisher: TakeWhilePublisher(predicate, publisher))
   }
 }

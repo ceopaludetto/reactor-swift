@@ -87,7 +87,7 @@ internal class TakeOperator<T>: Subscriber, Subscription {
 }
 
 extension Flux {
-  func take(_ take: UInt) -> Flux<T> {
+  public func take(_ take: UInt) -> Flux<T> {
     return Flux(publisher: TakePublisher(take, self.publisher))
   }
 }

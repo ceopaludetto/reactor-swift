@@ -1,11 +1,11 @@
 import Atomics
 
-enum ValidationError: Error {
+public enum ValidationError: Error {
   case invalidDemand(UInt)
 }
 
 extension ValidationError: CustomStringConvertible {
-  var description: String {
+  public var description: String {
     switch self {
     case .invalidDemand(let demand):
       return "Invalid demand \(demand), must be greater than 0"
