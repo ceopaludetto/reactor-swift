@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-internal class IndexPublisher<T, R>: Publisher {
+internal class FluxIndexPublisher<T, R>: Publisher {
   typealias Item = R
 
   private let source: any Publisher<T>
@@ -12,11 +12,11 @@ internal class IndexPublisher<T, R>: Publisher {
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(IndexOperator(mapper, subscriber))
+    self.source.subscribe(FluxIndexOperator(mapper, subscriber))
   }
 }
 
-internal class IndexOperator<T, R>: Subscriber, Subscription {
+internal class FluxIndexOperator<T, R>: Subscriber, Subscription {
   typealias Item = T
 
   private let mapper: (UInt, T) throws -> R
@@ -79,10 +79,10 @@ internal class IndexOperator<T, R>: Subscriber, Subscription {
 
 extension Flux {
   public func index() -> Flux<(UInt, T)> {
-    return Flux<(UInt, T)>(publisher: IndexPublisher({ ($0, $1) }, publisher))
+    return Flux<(UInt, T)>(publisher: FluxIndexPublisher({ ($0, $1) }, publisher))
   }
 
   public func index<R>(_ mapper: @escaping (UInt, T) throws -> R) -> Flux<R> {
-    return Flux<R>(publisher: IndexPublisher(mapper, publisher))
+    return Flux<R>(publisher: FluxIndexPublisher(mapper, publisher))
   }
 }

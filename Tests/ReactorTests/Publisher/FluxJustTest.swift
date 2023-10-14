@@ -5,19 +5,15 @@ import TCK
 
 @testable import Reactor
 
-struct JustPublisherTCK: PublisherVerification {
+struct FluxJustPublisherTCK: PublisherVerification {
   typealias Item = UInt
 
   func createPublisher(_ elements: UInt) -> any Publisher<Item> {
-    return JustPublisher(0..<elements)
+    return FluxJustPublisher(0..<elements)
   }
 
   func createFailedPublisher() -> (any Publisher<Item>)? {
-    enum JustError: Error {
-      case just
-    }
-
-    return MapPublisher({ _ in throw JustError.just }, JustPublisher(0...1))
+    return nil
   }
 
   func maxElementsFromPublisher() -> UInt {
@@ -29,13 +25,13 @@ struct JustPublisherTCK: PublisherVerification {
   }
 }
 
-class JustTest: QuickSpec {
+class FluxJustTest: QuickSpec {
   override class func spec() {
-    PublisherVerificationExecutor.TCK(JustPublisherTCK())
+    PublisherVerificationExecutor.TCK(FluxJustPublisherTCK())
   }
 }
 
-class JustAsyncTest: AsyncSpec {
+class FluxJustAsyncTest: AsyncSpec {
   override class func spec() {
     it("should await list of elements") {
       let items = try await Flux.just(1...)

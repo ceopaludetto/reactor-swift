@@ -1,7 +1,7 @@
 import Atomics
 import ReactiveStreams
 
-internal class JustPublisher<T, S: Sequence<T>>: Publisher {
+internal class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
   typealias Item = T
 
   private let items: S
@@ -12,7 +12,7 @@ internal class JustPublisher<T, S: Sequence<T>>: Publisher {
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
     subscriber.onSubscribe(
-      JustSubscription<T, S>(
+      FluxJustSubscription<T, S>(
         subscriber: subscriber,
         items: items.makeIterator()
       )
@@ -20,7 +20,7 @@ internal class JustPublisher<T, S: Sequence<T>>: Publisher {
   }
 }
 
-internal class JustSubscription<T, S: Sequence<T>>: Subscription {
+internal class FluxJustSubscription<T, S: Sequence<T>>: Subscription {
   private var actual: any Subscriber<T>
   private var items: PeekableIterator<S.Iterator>
 
@@ -107,6 +107,6 @@ internal class JustSubscription<T, S: Sequence<T>>: Subscription {
 
 extension Flux {
   public static func just(_ items: some Sequence<T>) -> Flux<T> {
-    return Flux(publisher: JustPublisher(items))
+    return Flux(publisher: FluxJustPublisher(items))
   }
 }

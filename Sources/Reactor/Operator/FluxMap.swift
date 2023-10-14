@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-internal class MapPublisher<T, R>: Publisher {
+internal class FluxMapPublisher<T, R>: Publisher {
   typealias Item = R
 
   private let mapper: (T) throws -> R
@@ -12,11 +12,11 @@ internal class MapPublisher<T, R>: Publisher {
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(MapOperator(mapper, subscriber))
+    self.source.subscribe(FluxMapOperator(mapper, subscriber))
   }
 }
 
-internal class MapOperator<T, R>: Subscriber, Subscription {
+internal class FluxMapOperator<T, R>: Subscriber, Subscription {
   typealias Item = T
 
   private let mapper: (T) throws -> R
@@ -77,6 +77,6 @@ internal class MapOperator<T, R>: Subscriber, Subscription {
 
 extension Flux {
   public func map<R>(_ mapper: @escaping (T) -> R) -> Flux<R> {
-    return Flux<R>(publisher: MapPublisher(mapper, self.publisher))
+    return Flux<R>(publisher: FluxMapPublisher(mapper, self.publisher))
   }
 }

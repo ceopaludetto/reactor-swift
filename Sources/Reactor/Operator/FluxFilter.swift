@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-internal class FilterPublisher<T>: Publisher {
+internal class FluxFilterPublisher<T>: Publisher {
   typealias Item = T
 
   private let predicate: (T) throws -> Bool
@@ -12,11 +12,11 @@ internal class FilterPublisher<T>: Publisher {
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(FilterOperator(predicate, subscriber))
+    self.source.subscribe(FluxFilterOperator(predicate, subscriber))
   }
 }
 
-internal class FilterOperator<T>: Subscriber, Subscription {
+internal class FluxFilterOperator<T>: Subscriber, Subscription {
   typealias Item = T
 
   private let predicate: (T) throws -> Bool
@@ -82,6 +82,6 @@ internal class FilterOperator<T>: Subscriber, Subscription {
 
 extension Flux {
   public func filter(_ predicate: @escaping (T) -> Bool) -> Flux<T> {
-    return Flux(publisher: FilterPublisher(predicate, self.publisher))
+    return Flux(publisher: FluxFilterPublisher(predicate, self.publisher))
   }
 }

@@ -1,7 +1,6 @@
-import Atomics
 import ReactiveStreams
 
-internal class TakePublisher<T>: Publisher {
+internal class FluxTakePublisher<T>: Publisher {
   typealias Item = T
 
   private let take: UInt
@@ -13,11 +12,11 @@ internal class TakePublisher<T>: Publisher {
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(TakeOperator(take, subscriber))
+    self.source.subscribe(FluxTakeOperator(take, subscriber))
   }
 }
 
-internal class TakeOperator<T>: Subscriber, Subscription {
+internal class FluxTakeOperator<T>: Subscriber, Subscription {
   typealias Item = T
 
   private let take: UInt
@@ -88,6 +87,6 @@ internal class TakeOperator<T>: Subscriber, Subscription {
 
 extension Flux {
   public func take(_ take: UInt) -> Flux<T> {
-    return Flux(publisher: TakePublisher(take, self.publisher))
+    return Flux(publisher: FluxTakePublisher(take, self.publisher))
   }
 }

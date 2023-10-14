@@ -1,11 +1,11 @@
 import Atomics
 import ReactiveStreams
 
-enum FlatMapSourceMode {
+private enum FluxFlatMapSourceMode {
   case normal, sync, async
 }
 
-public struct FlatMapOptions {
+public struct FluxFlatMapOptions {
   var maxConcurrency: UInt = .max
   var prefetch: UInt = 128
   var delayError: Bool = false
@@ -22,12 +22,12 @@ internal class FlatMapPublisher<T, R>: Publisher {
 
   private let mapper: (T) throws -> any Publisher<R>
   private let source: any Publisher<T>
-  private let options: FlatMapOptions
+  private let options: FluxFlatMapOptions
 
   init(
     _ mapper: @escaping (T) throws -> any Publisher<R>,
     _ publisher: some Publisher<T>,
-    _ options: FlatMapOptions
+    _ options: FluxFlatMapOptions
   ) {
     self.mapper = mapper
     self.source = publisher
@@ -35,18 +35,18 @@ internal class FlatMapPublisher<T, R>: Publisher {
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(FlatMapMainOperator(mapper, subscriber, options))
+    self.source.subscribe(FluxFlatMapMainOperator(mapper, subscriber, options))
   }
 }
 
-internal class FlatMapMainOperator<T, R>: Subscriber, Subscription {
+internal class FluxFlatMapMainOperator<T, R>: Subscriber, Subscription {
   typealias Item = T
 
   private let mapper: (T) throws -> any Publisher<R>
 
   private var actual: any Subscriber<R>
   private var subscription: (any Subscription)?
-  private let options: FlatMapOptions
+  private let options: FluxFlatMapOptions
 
   private var done: Bool = false
 
@@ -57,7 +57,7 @@ internal class FlatMapMainOperator<T, R>: Subscriber, Subscription {
   init(
     _ mapper: @escaping (T) throws -> any Publisher<R>,
     _ actual: any Subscriber<R>,
-    _ options: FlatMapOptions
+    _ options: FluxFlatMapOptions
   ) {
     self.mapper = mapper
     self.actual = actual
@@ -78,7 +78,7 @@ internal class FlatMapMainOperator<T, R>: Subscriber, Subscription {
 
     do {
       let publisher = try mapper(element)
-      publisher.subscribe(FlatMapInnerOperator(self, options.prefetch))
+      publisher.subscribe(FluxFlatMapInnerOperator(self, options.prefetch))
     } catch {
       subscription?.cancel()
       onError(error)
@@ -144,21 +144,21 @@ internal class FlatMapMainOperator<T, R>: Subscriber, Subscription {
   func innerComplete() {}
 }
 
-internal class FlatMapInnerOperator<T, R>: Subscriber, Subscription {
+internal class FluxFlatMapInnerOperator<T, R>: Subscriber, Subscription {
   typealias Item = R
 
   private var subscription: (any Subscription)?
-  private var parent: FlatMapMainOperator<T, R>
+  private var parent: FluxFlatMapMainOperator<T, R>
 
   private var produced: UInt = 0
   private var prefetch: UInt
   private var limit: UInt
 
-  private var sourceMode: FlatMapSourceMode = .normal
+  private var sourceMode: FluxFlatMapSourceMode = .normal
 
   private let done: ManagedAtomic<Bool> = .init(false)
 
-  init(_ parent: FlatMapMainOperator<T, R>, _ prefetch: UInt) {
+  init(_ parent: FluxFlatMapMainOperator<T, R>, _ prefetch: UInt) {
     self.parent = parent
     self.prefetch = prefetch
     self.limit = prefetch - (prefetch >> 2)
@@ -208,14 +208,14 @@ internal class FlatMapInnerOperator<T, R>: Subscriber, Subscription {
 extension Flux {
   public func flatMap<R>(
     _ mapper: @escaping (T) throws -> any Publisher<R>,
-    options: FlatMapOptions = .init()
+    options: FluxFlatMapOptions = .init()
   ) -> Flux<R> {
     return Flux<R>(publisher: FlatMapPublisher(mapper, publisher, options))
   }
 
   public func flatMap<R, C: AsPublisher<R>>(
     _ mapper: @escaping (T) throws -> C,
-    options: FlatMapOptions = .init()
+    options: FluxFlatMapOptions = .init()
   ) -> Flux<R> {
     return flatMap({ try mapper($0).asPublisher() }, options: options)
   }

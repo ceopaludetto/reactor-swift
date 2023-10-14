@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-internal class TakeUntilPublisher<T>: Publisher {
+internal class FluxTakeUntilPublisher<T>: Publisher {
   typealias Item = T
 
   private let predicate: (T) throws -> Bool
@@ -12,11 +12,11 @@ internal class TakeUntilPublisher<T>: Publisher {
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(TakeUntilOperator(predicate, subscriber))
+    self.source.subscribe(FluxTakeUntilOperator(predicate, subscriber))
   }
 }
 
-internal class TakeUntilOperator<T>: Subscriber, Subscription {
+internal class FluxTakeUntilOperator<T>: Subscriber, Subscription {
   typealias Item = T
 
   private let predicate: (T) throws -> Bool
@@ -84,6 +84,6 @@ internal class TakeUntilOperator<T>: Subscriber, Subscription {
 
 extension Flux {
   public func takeUntil(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
-    return Flux(publisher: TakeUntilPublisher(predicate, publisher))
+    return Flux(publisher: FluxTakeUntilPublisher(predicate, publisher))
   }
 }

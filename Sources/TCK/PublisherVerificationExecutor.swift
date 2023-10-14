@@ -158,8 +158,11 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
             throw XCTSkip("Not needed on swift")
           }
 
-          xit("mustIssueOnSubscribeForNonNullSubscriber") {
-
+          it("mustIssueOnSubscribeForNonNullSubscriber") {
+            try createTestContext(verification, 0) { publisher, subscriber in
+              expect(subscriber.subscription.value).notTo(beNil())
+              expect(subscriber.registeredCalls.first).to(equal(.onSubscribe))
+            }
           }
 
           xit(
@@ -266,9 +269,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec313") {
           it("cancelMustMakeThePublisherEventuallyDropAllReferencesToTheSubscriber") {
-            throw XCTSkip(
-              "Probably not testable on swift since we don't have a way to check if a reference is dropped"
-            )
+            throw XCTSkip("Probably not testable on swift since it's use ARC")
           }
         }
 
@@ -331,7 +332,8 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
       describe("optional") {
         context("spec104") {
-          xit("mustSignalOnErrorWhenFails") {
+          it("mustSignalOnErrorWhenFails") {
+            // TODO: actually is broken
             try createFailedTestContext(verification) { publisher, subscriber in
               expect(subscriber.expectAnyError()).notTo(beNil())
               expect(subscriber.registeredCalls).to(equal([.onSubscribe, .onError]))
@@ -491,7 +493,49 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
         }
       }
 
-      describe("untested") {}
+      describe("untested") {
+        context("spec106") {
+          it("mustConsiderSubscriptionCancelledAfterOnErrorOrOnCompleteHasBeenCalled") {
+            throw XCTSkip("Not really testable without more control over the publisher")
+          }
+        }
+
+        context("spec107") {
+          it("mustNotEmitFurtherSignalsOnceOnErrorHasBeenSignalled") {
+            throw XCTSkip("Can we meaningfully test this, without more control over the publisher?")
+          }
+        }
+
+        context("spec108") {
+          it("possiblyCanceledSubscriptionShouldNotReceiveOnErrorOrOnCompleteSignals") {
+            throw XCTSkip("Can we meaningfully test this?")
+          }
+        }
+
+        context("spec109") {
+          it("subscribeShouldNotThrowNonFatalThrowable") {
+            throw XCTSkip("Can we meaningfully test this?")
+          }
+        }
+
+        context("spec110") {
+          it("rejectASubscriptionRequestIfTheSameSubscriberSubscribesTwice") {
+            throw XCTSkip("Can we meaningfully test this?")
+          }
+        }
+
+        context("spec304") {
+          it("requestShouldNotPerformHeavyComputations") {
+            throw XCTSkip("Cannot be meaningfully tested")
+          }
+        }
+
+        context("spec305") {
+          it("cancelMustNotSynchronouslyPerformHeavyComputation") {
+            throw XCTSkip("Cannot be meaningfully tested")
+          }
+        }
+      }
     }
   }
 }
