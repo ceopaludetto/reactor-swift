@@ -13,12 +13,7 @@ internal class ScalarSubscription<T>: Subscription {
   }
 
   func request(_ demand: UInt) {
-    if case .failure(let error) = Validator.demand(demand) {
-      cancel()
-      actual.onError(error)
-
-      return
-    }
+    #validateDemand(demand, cancel, actual.onError)
 
     if done.load(ordering: .relaxed) {
       return

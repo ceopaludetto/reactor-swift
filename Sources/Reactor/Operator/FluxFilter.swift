@@ -6,7 +6,7 @@ internal class FluxFilterPublisher<T>: Publisher {
   private let predicate: (T) throws -> Bool
   private let source: any Publisher<T>
 
-  init(_ predicate: @escaping (T) -> Bool, _ publisher: some Publisher<T>) {
+  init(_ predicate: @escaping (T) throws -> Bool, _ publisher: some Publisher<T>) {
     self.predicate = predicate
     self.source = publisher
   }
@@ -81,7 +81,7 @@ internal class FluxFilterOperator<T>: Subscriber, Subscription {
 }
 
 extension Flux {
-  public func filter(_ predicate: @escaping (T) -> Bool) -> Flux<T> {
+  public func filter(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
     return Flux(publisher: FluxFilterPublisher(predicate, self.publisher))
   }
 }

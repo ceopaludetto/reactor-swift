@@ -1,12 +1,8 @@
 # Swift Reactor
 
-Recreating [Project Reactor](https://projectreactor.io/) on Swift just for fun
+Recreating [Project Reactor](https://projectreactor.io/) on Swift just for fun. At first I've followed this [awesome presentation](https://www.youtube.com/watch?v=OdSZ6mOQDcY) about reactive-streams specification. Then I've started to recreate my own publishers, operators and TCK.
 
-At first I've followed this [awesome presentation](https://www.youtube.com/watch?v=OdSZ6mOQDcY) about reactive-streams specification
-
-Then I've started to recreate my own publishers, operators and TCK
-
-This project is also a monorepo with shared dependencies between each other
+This project is also a monorepo with shared dependencies.
 
 ## Get Started
 
@@ -15,7 +11,7 @@ This project is also a monorepo with shared dependencies between each other
 
 ## VSCode
 
-You will need these extensions:
+You'll need these extensions:
 
 - [Swift](https://marketplace.visualstudio.com/items?itemName=sswg.swift-lang)
 - [Apple SwiftFormat](https://github.com/vknabel/vscode-apple-swift-format)

@@ -76,7 +76,7 @@ internal class FluxMapOperator<T, R>: Subscriber, Subscription {
 }
 
 extension Flux {
-  public func map<R>(_ mapper: @escaping (T) -> R) -> Flux<R> {
+  public func map<R>(_ mapper: @escaping (T) throws -> R) -> Flux<R> {
     return Flux<R>(publisher: FluxMapPublisher(mapper, self.publisher))
   }
 }

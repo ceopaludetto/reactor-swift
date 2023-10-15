@@ -9,10 +9,7 @@ internal class AsyncSubscriber<T>: Subscriber {
   private var continuation: CheckedContinuation<[T], Error>?
 
   func onSubscribe(_ subscription: some Subscription) {
-    task = Task {
-      try await withCheckedThrowingContinuation { self.continuation = $0 }
-    }
-
+    task = Task { try await withCheckedThrowingContinuation { self.continuation = $0 } }
     subscription.request(.max)
   }
 
@@ -43,10 +40,10 @@ extension Flux {
 }
 
 extension Mono {
-  public func awaitSingle() async throws -> T {
+  public func awaitSingle() async throws {
     let subscriber = AsyncSubscriber<T>()
     subscribe(subscriber)
 
-    return try await subscriber.awaitList().first!
+    // return try await subscriber.awaitList().first!
   }
 }

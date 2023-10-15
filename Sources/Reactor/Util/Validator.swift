@@ -38,14 +38,21 @@ internal struct Validator {
       if new <= 0 {
         new = .max
       }
-    } while !requested.weakCompareExchange(
-      expected: initialRequested, desired: new, ordering: .relaxed
-    ).exchanged
+    } while !requested.weakCompareExchange(initialRequested, new)
 
     if initialRequested > 0 {
       return nil
     }
 
     return new
+  }
+}
+
+extension ManagedAtomic where Value == UInt {
+  fileprivate func weakCompareExchange(
+    _ expected: UInt,
+    _ desired: UInt
+  ) -> Bool {
+    return weakCompareExchange(expected: expected, desired: desired, ordering: .relaxed).exchanged
   }
 }

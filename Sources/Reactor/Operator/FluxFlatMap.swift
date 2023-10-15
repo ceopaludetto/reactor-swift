@@ -99,12 +99,7 @@ internal class FluxFlatMapMainOperator<T, R>: Subscriber, Subscription {
   }
 
   func request(_ demand: UInt) {
-    if case .failure(let error) = Validator.demand(demand) {
-      cancel()
-      actual.onError(error)
-
-      return
-    }
+    #validateDemand(demand, cancel, actual.onError)
 
     if let new = Validator.addCap(demand, requested) {
 

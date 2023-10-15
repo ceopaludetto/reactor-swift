@@ -17,11 +17,11 @@ struct PeekableIterator<Iterator: IteratorProtocol>: IteratorProtocol {
   }
 
   mutating func next() -> Element? {
-    guard let result = nextElement else {
-      return iterator.next()
+    if let result = nextElement {
+      nextElement = nil
+      return result
     }
 
-    nextElement = nil
-    return result
+    return iterator.next()
   }
 }
