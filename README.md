@@ -1,4 +1,4 @@
-# Swift Reactor
+# Reactor Swift
 
 Recreating [Project Reactor](https://projectreactor.io/) on Swift just for fun. At first I've followed this [awesome presentation](https://www.youtube.com/watch?v=OdSZ6mOQDcY) about reactive-streams specification. Then I've started to recreate my own publishers, operators and TCK.
 
