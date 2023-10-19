@@ -16,6 +16,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.5.3")),
 		.package(url: "https://github.com/Quick/Quick.git", .upToNextMajor(from: "7.0.0")),
 		.package(url: "https://github.com/Quick/Nimble.git", .upToNextMajor(from: "12.0.0")),
+		.package(url: "https://github.com/pointfreeco/swift-macro-testing", .upToNextMajor(from: "0.2.1")),
 		.package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
 	],
 	targets: [
@@ -55,8 +56,7 @@ let package = Package(
 			name: "ReactorMacrosTest",
 			dependencies: [
 				"ReactorMacros",
-				.product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-				.product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+				.product(name: "MacroTesting", package: "swift-macro-testing"),
 			]
 		),
 	]

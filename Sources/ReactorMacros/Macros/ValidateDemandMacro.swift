@@ -19,10 +19,10 @@ public struct ValidateDemandMacro: DeclarationMacro {
 		return [
 			"""
 			if case .failure(let error) = Validator.demand(\(raw: demand)) {
-			  \(raw: cancel)()
-			  \(raw: onError)(error)
+				\(raw: cancel)()
+				\(raw: onError)(error)
 
-			  return
+				return
 			}
 			""",
 		]

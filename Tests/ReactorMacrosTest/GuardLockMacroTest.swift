@@ -1,6 +1,5 @@
+import MacroTesting
 import Quick
-import SwiftSyntaxMacros
-import SwiftSyntaxMacrosTestSupport
 import XCTest
 
 @testable import ReactorMacros
@@ -8,44 +7,41 @@ import XCTest
 class GuardLockMacroTest: QuickSpec {
 	override class func spec() {
 		it("should expand guardLock in .terminal mode") {
-			assertMacroExpansion(
+			assertMacro(["guardLock": GuardLockMacro.self]) {
 				"""
 				#guardLock(lock, done, .terminal)
-				""",
-				expandedSource:
+				"""
+			} expansion: {
 				"""
 				lock.lock()
 				guard !done else {
-				  lock.unlock()
-				  return
+					lock.unlock()
+					return
 				}
 
 				done.toggle()
 				lock.unlock()
-				""",
-				macros: ["guardLock": GuardLockMacro.self],
-				indentationWidth: .tabs(2)
-			)
+				"""
+			}
 		}
 
 		it("should expand guardLock in .next mode") {
-			assertMacroExpansion(
+			assertMacro(["guardLock": GuardLockMacro.self]) {
 				"""
 				#guardLock(lock, done, .next)
-				""",
-				expandedSource:
+				"""
+			} expansion: {
 				"""
 				lock.lock()
 				guard !done else {
-				  lock.unlock()
-				  return
+					lock.unlock()
+					return
 				}
 
+
 				lock.unlock()
-				""",
-				macros: ["guardLock": GuardLockMacro.self],
-				indentationWidth: .tabs(2)
-			)
+				"""
+			}
 		}
 	}
 }

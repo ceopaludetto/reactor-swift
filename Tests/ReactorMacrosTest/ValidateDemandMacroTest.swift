@@ -1,6 +1,5 @@
+import MacroTesting
 import Quick
-import SwiftSyntaxMacros
-import SwiftSyntaxMacrosTestSupport
 import XCTest
 
 @testable import ReactorMacros
@@ -8,22 +7,20 @@ import XCTest
 class ValidateDemandMacroTest: QuickSpec {
 	override class func spec() {
 		it("should expand #validateDemand correctly") {
-			assertMacroExpansion(
+			assertMacro(["validateDemand": ValidateDemandMacro.self]) {
 				"""
 				#validateDemand(demand, self.cancel, self.actual.onError)
-				""",
-				expandedSource:
+				"""
+			} expansion: {
 				"""
 				if case .failure(let error) = Validator.demand(demand) {
-					self.cancel()
-					self.actual.onError(error)
+						self.cancel()
+						self.actual.onError(error)
 
-					return
+						return
 				}
-				""",
-				macros: ["validateDemand": ValidateDemandMacro.self],
-				indentationWidth: .tabs(2)
-			)
+				"""
+			}
 		}
 	}
 }

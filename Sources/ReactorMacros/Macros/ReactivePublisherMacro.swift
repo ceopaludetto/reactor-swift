@@ -9,11 +9,11 @@ public struct ReactivePublisherMacro: ExtensionMacro, MemberMacro {
 	) throws -> [DeclSyntax] {
 		[
 			"""
-				internal let publisher: any Publisher<T>
+			internal let publisher: any Publisher<T>
 
-			  internal init(publisher: some Publisher<T>) {
-			    self.publisher = publisher
-			  }
+			internal init(publisher: some Publisher<T>) {
+				self.publisher = publisher
+			}
 			""",
 		]
 	}
@@ -28,12 +28,13 @@ public struct ReactivePublisherMacro: ExtensionMacro, MemberMacro {
 		try [
 			ExtensionDeclSyntax(
 				"""
-					extension \(type): AsPublisher {
-						public func asPublisher() -> any Publisher<T> {
-							return self.publisher
-						}
+				extension \(type): AsPublisher {
+					public func asPublisher() -> any Publisher<T> {
+						return self.publisher
 					}
-				"""),
+				}
+				"""
+			),
 		]
 	}
 }
