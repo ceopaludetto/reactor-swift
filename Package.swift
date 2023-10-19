@@ -40,15 +40,21 @@ let package = Package(
 			]
 		),
 		.target(name: "Reactor", dependencies: ["ReactiveStreams", "ReactorMacros"]),
+		.target(name: "ReactorTest", dependencies: ["ReactiveStreams", "Reactor"]),
 
 		.testTarget(
 			name: "ReactorTests",
 			dependencies: [
-				"ReactorMacros",
 				"TCK",
 				"Reactor",
 				"Quick",
 				"Nimble",
+			]
+		),
+		.testTarget(
+			name: "ReactorMacrosTest",
+			dependencies: [
+				"ReactorMacros",
 				.product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
 				.product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
 			]

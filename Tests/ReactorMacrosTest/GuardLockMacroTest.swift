@@ -1,8 +1,9 @@
 import Quick
-import ReactorMacros
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
+
+@testable import ReactorMacros
 
 class GuardLockMacroTest: QuickSpec {
 	override class func spec() {
