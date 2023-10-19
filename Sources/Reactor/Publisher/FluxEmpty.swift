@@ -1,16 +1,16 @@
 import ReactiveStreams
 
-internal class FluxEmptyPublisher<T>: Publisher {
-  typealias Item = T
+class FluxEmptyPublisher<T>: Publisher {
+	typealias Item = T
 
-  func subscribe(_ subscriber: some Subscriber<Item>) {
-    subscriber.onSubscribe(EmptySubscription())
-    subscriber.onComplete()
-  }
+	func subscribe(_ subscriber: some Subscriber<Item>) {
+		subscriber.onSubscribe(EmptySubscription())
+		subscriber.onComplete()
+	}
 }
 
-extension Flux {
-  public static func empty() -> Flux<T> {
-    return Flux(publisher: FluxEmptyPublisher())
-  }
+public extension Flux {
+	static func empty() -> Flux<T> {
+		Flux(publisher: FluxEmptyPublisher())
+	}
 }

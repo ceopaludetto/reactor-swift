@@ -1,5 +1,5 @@
 public protocol Publisher<Item>: AnyObject {
-  associatedtype Item
+	associatedtype Item
 
-  func subscribe(_ subscriber: some Subscriber<Item>)
+	func subscribe(_ subscriber: some Subscriber<Item>)
 }

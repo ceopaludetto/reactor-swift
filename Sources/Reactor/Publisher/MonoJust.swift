@@ -1,21 +1,21 @@
 import ReactiveStreams
 
-internal class MonoJustPublisher<T>: Publisher {
-  typealias Item = T
+class MonoJustPublisher<T>: Publisher {
+	typealias Item = T
 
-  private let item: T
+	private let item: T
 
-  init(_ item: T) {
-    self.item = item
-  }
+	init(_ item: T) {
+		self.item = item
+	}
 
-  func subscribe(_ subscriber: some Subscriber<Item>) {
-    subscriber.onSubscribe(ScalarSubscription(subscriber: subscriber, item: item))
-  }
+	func subscribe(_ subscriber: some Subscriber<Item>) {
+		subscriber.onSubscribe(ScalarSubscription(subscriber: subscriber, item: self.item))
+	}
 }
 
-extension Mono {
-  public static func just(_ item: T) -> Mono<T> {
-    return Mono(publisher: MonoJustPublisher(item))
-  }
+public extension Mono {
+	static func just(_ item: T) -> Mono<T> {
+		Mono(publisher: MonoJustPublisher(item))
+	}
 }

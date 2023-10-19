@@ -1,41 +1,41 @@
 // MARK: Mono
 
-extension Optional {
-  public func toMono() -> Mono<Wrapped> {
-    return Mono.fromOptional(self)
-  }
+public extension Optional {
+	func toMono() -> Mono<Wrapped> {
+		Mono.fromOptional(self)
+	}
 }
 
-extension Result {
-  public func toMono() -> Mono<Success> {
-    return Mono.fromResult(self)
-  }
+public extension Result {
+	func toMono() -> Mono<Success> {
+		Mono.fromResult(self)
+	}
 }
 
-extension Error {
-  public func toMono<T>() -> Mono<T> {
-    return Mono.error(self)
-  }
+public extension Error {
+	func toMono<T>() -> Mono<T> {
+		Mono.error(self)
+	}
 }
 
-extension Int {
-  public func toMono() -> Mono<Int> {
-    return Mono.just(self)
-  }
+public extension Int {
+	func toMono() -> Mono<Int> {
+		Mono.just(self)
+	}
 }
 
-extension UInt {
-  public func toMono() -> Mono<UInt> {
-    return Mono.just(self)
-  }
+public extension UInt {
+	func toMono() -> Mono<UInt> {
+		Mono.just(self)
+	}
 }
 
 // TODO: add Int8, Int16, Int32, Int64, UInt8, UInt16, UInt32, UInt64
 
 // MARK: Flux
 
-extension Sequence {
-  public func toFlux() -> Flux<Element> {
-    return Flux.just(self)
-  }
+public extension Sequence {
+	func toFlux() -> Flux<Element> {
+		Flux.just(self)
+	}
 }

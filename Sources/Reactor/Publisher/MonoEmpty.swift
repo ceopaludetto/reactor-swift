@@ -1,16 +1,16 @@
 import ReactiveStreams
 
-internal class MonoEmptyPublisher<T>: Publisher {
-  typealias Item = T
+class MonoEmptyPublisher<T>: Publisher {
+	typealias Item = T
 
-  func subscribe(_ subscriber: some Subscriber<Item>) {
-    subscriber.onSubscribe(EmptySubscription())
-    subscriber.onComplete()
-  }
+	func subscribe(_ subscriber: some Subscriber<Item>) {
+		subscriber.onSubscribe(EmptySubscription())
+		subscriber.onComplete()
+	}
 }
 
-extension Mono {
-  public static func empty() -> Mono<T> {
-    return Mono(publisher: MonoEmptyPublisher())
-  }
+public extension Mono {
+	static func empty() -> Mono<T> {
+		Mono(publisher: MonoEmptyPublisher())
+	}
 }

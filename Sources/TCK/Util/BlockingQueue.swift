@@ -1,40 +1,40 @@
 import Foundation
 
 class BlockingQueue<T> {
-  private var array: [T] = []
-  private var group: DispatchGroup = .init()
+	private var array: [T] = []
+	private var group: DispatchGroup = .init()
 
-  func add(_ element: T) {
-    group.enter()
+	func add(_ element: T) {
+		self.group.enter()
 
-    DispatchQueue.global().sync {
-      array.append(element)
-      group.leave()
-    }
-  }
+		DispatchQueue.global().sync {
+			self.array.append(element)
+			self.group.leave()
+		}
+	}
 
-  func take(_ timeout: TimeInterval? = nil) -> T? {
-    if case .timedOut = group.wait(timeout: timeout.toDispatchTime()) {
-      return nil
-    }
+	func take(_ timeout: TimeInterval? = nil) -> T? {
+		if case .timedOut = self.group.wait(timeout: timeout.toDispatchTime()) {
+			return nil
+		}
 
-    if array.isEmpty {
-      return nil
-    }
+		if self.array.isEmpty {
+			return nil
+		}
 
-    return array.removeFirst()
-  }
+		return self.array.removeFirst()
+	}
 
-  func takeAll(_ timeout: TimeInterval? = nil) -> [T] {
-    if case .timedOut = group.wait(timeout: timeout.toDispatchTime()) {
-      return []
-    }
+	func takeAll(_ timeout: TimeInterval? = nil) -> [T] {
+		if case .timedOut = self.group.wait(timeout: timeout.toDispatchTime()) {
+			return []
+		}
 
-    var elements: [T] = []
-    while !array.isEmpty {
-      elements.append(array.removeFirst())
-    }
+		var elements: [T] = []
+		while !self.array.isEmpty {
+			elements.append(self.array.removeFirst())
+		}
 
-    return elements
-  }
+		return elements
+	}
 }

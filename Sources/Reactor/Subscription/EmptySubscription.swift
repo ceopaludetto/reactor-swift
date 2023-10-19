@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-internal class EmptySubscription: Subscription {
-  func request(_ demand: UInt) {}
-  func cancel() {}
+class EmptySubscription: Subscription {
+	func request(_: UInt) {}
+	func cancel() {}
 }

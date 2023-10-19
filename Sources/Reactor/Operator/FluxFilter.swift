@@ -1,90 +1,90 @@
 import Foundation
 import ReactiveStreams
 
-internal class FluxFilterPublisher<T>: Publisher {
-  typealias Item = T
+class FluxFilterPublisher<T>: Publisher {
+	typealias Item = T
 
-  private let predicate: (T) throws -> Bool
-  private let source: any Publisher<T>
+	private let predicate: (T) throws -> Bool
+	private let source: any Publisher<T>
 
-  init(_ predicate: @escaping (T) throws -> Bool, _ publisher: some Publisher<T>) {
-    self.predicate = predicate
-    self.source = publisher
-  }
+	init(_ predicate: @escaping (T) throws -> Bool, _ publisher: some Publisher<T>) {
+		self.predicate = predicate
+		self.source = publisher
+	}
 
-  func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(FluxFilterOperator(predicate, subscriber))
-  }
+	func subscribe(_ subscriber: some Subscriber<Item>) {
+		self.source.subscribe(FluxFilterOperator(self.predicate, subscriber))
+	}
 }
 
-internal class FluxFilterOperator<T>: Subscriber, Subscription {
-  typealias Item = T
+class FluxFilterOperator<T>: Subscriber, Subscription {
+	typealias Item = T
 
-  private let predicate: (T) throws -> Bool
+	private let predicate: (T) throws -> Bool
 
-  private var actual: any Subscriber<T>
-  private var subscription: (any Subscription)?
+	private var actual: any Subscriber<T>
+	private var subscription: (any Subscription)?
 
-  private let lock: NSLock = .init()
-  private var done: Bool = false
+	private let lock: NSLock = .init()
+	private var done: Bool = false
 
-  init(_ predicate: @escaping (T) throws -> Bool, _ actual: any Subscriber<T>) {
-    self.predicate = predicate
-    self.actual = actual
-  }
+	init(_ predicate: @escaping (T) throws -> Bool, _ actual: any Subscriber<T>) {
+		self.predicate = predicate
+		self.actual = actual
+	}
 
-  func onSubscribe(_ subscription: some Subscription) {
-    lock.lock()
+	func onSubscribe(_ subscription: some Subscription) {
+		self.lock.lock()
 
-    guard self.subscription == nil, !done else {
-      lock.unlock()
-      self.subscription?.cancel()
+		guard self.subscription == nil, !self.done else {
+			self.lock.unlock()
+			self.subscription?.cancel()
 
-      return
-    }
+			return
+		}
 
-    self.subscription = subscription
-    lock.unlock()
+		self.subscription = subscription
+		self.lock.unlock()
 
-    actual.onSubscribe(self)
-  }
+		self.actual.onSubscribe(self)
+	}
 
-  func onNext(_ element: T) {
-    #guardLock(self.lock, self.done, .next)
+	func onNext(_ element: T) {
+		#guardLock(self.lock, self.done, .next)
 
-    do {
-      if try predicate(element) {
-        actual.onNext(element)
-        return
-      }
+		do {
+			if try self.predicate(element) {
+				self.actual.onNext(element)
+				return
+			}
 
-      subscription?.request(1)
-    } catch {
-      onError(error)
-    }
-  }
+			self.subscription?.request(1)
+		} catch {
+			self.onError(error)
+		}
+	}
 
-  func onError(_ error: Error) {
-    #guardLock(self.lock, self.done, .terminal)
-    actual.onError(error)
-  }
+	func onError(_ error: Error) {
+		#guardLock(self.lock, self.done, .terminal)
+		self.actual.onError(error)
+	}
 
-  func onComplete() {
-    #guardLock(self.lock, self.done, .terminal)
-    actual.onComplete()
-  }
+	func onComplete() {
+		#guardLock(self.lock, self.done, .terminal)
+		self.actual.onComplete()
+	}
 
-  func request(_ demand: UInt) {
-    subscription?.request(demand)
-  }
+	func request(_ demand: UInt) {
+		self.subscription?.request(demand)
+	}
 
-  func cancel() {
-    subscription?.cancel()
-  }
+	func cancel() {
+		self.subscription?.cancel()
+	}
 }
 
-extension Flux {
-  public func filter(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
-    return Flux(publisher: FluxFilterPublisher(predicate, self.publisher))
-  }
+public extension Flux {
+	func filter(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
+		Flux(publisher: FluxFilterPublisher(predicate, publisher))
+	}
 }

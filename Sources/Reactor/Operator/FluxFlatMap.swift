@@ -1,382 +1,382 @@
 import Foundation
 import ReactiveStreams
 
-internal class FlatMapPublisher<T, R>: Publisher {
-  typealias Item = R
+class FlatMapPublisher<T, R>: Publisher {
+	typealias Item = R
 
-  private let mapper: (T) throws -> any Publisher<R>
-  private let source: any Publisher<T>
-  private let maxConcurrency: UInt
+	private let mapper: (T) throws -> any Publisher<R>
+	private let source: any Publisher<T>
+	private let maxConcurrency: UInt
 
-  init(
-    _ mapper: @escaping (T) throws -> any Publisher<R>,
-    _ publisher: some Publisher<T>,
-    _ maxConcurrency: UInt
-  ) {
-    self.mapper = mapper
-    self.source = publisher
-    self.maxConcurrency = maxConcurrency
-  }
+	init(
+		_ mapper: @escaping (T) throws -> any Publisher<R>,
+		_ publisher: some Publisher<T>,
+		_ maxConcurrency: UInt
+	) {
+		self.mapper = mapper
+		self.source = publisher
+		self.maxConcurrency = maxConcurrency
+	}
 
-  func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(FluxFlatMapOperator(mapper, subscriber, maxConcurrency))
-  }
+	func subscribe(_ subscriber: some Subscriber<Item>) {
+		self.source.subscribe(FluxFlatMapOperator(self.mapper, subscriber, self.maxConcurrency))
+	}
 }
 
 /// This flatMap implementation is highly inspired by OpenCombine's implementation:
 /// https://github.com/OpenCombine/OpenCombine/blob/master/Sources/OpenCombine/Publishers/Publishers.FlatMap.swift
 ///
 /// Only small changes were made to make it work with ReactiveStreams.
-internal class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
-  typealias Item = T
+class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
+	typealias Item = T
 
-  private let mapper: (T) throws -> any Publisher<R>
-  private let actual: any Subscriber<R>
-
-  private var subscription: (any Subscription)?
-  private var subscriptions: [Int: any Subscription] = [:]
+	private let mapper: (T) throws -> any Publisher<R>
+	private let actual: any Subscriber<R>
+
+	private var subscription: (any Subscription)?
+	private var subscriptions: [Int: any Subscription] = [:]
 
-  private let maxConcurrency: UInt
+	private let maxConcurrency: UInt
 
-  // locks
-  private let lock: NSLock = .init()
-  private let downstreamLock: NSRecursiveLock = .init()
-  private let outerLock: NSRecursiveLock = .init()
+	// locks
+	private let lock: NSLock = .init()
+	private let downstreamLock: NSRecursiveLock = .init()
+	private let outerLock: NSRecursiveLock = .init()
 
-  // states
-  private var buffer: [(Int, R)] = []
-  private var downstreamRecursive: Bool = false
-  private var innerRecursive: Bool = false
-  private var requested: UInt = 0
-  private var nextInnerIndex: Int = 0
-  private var pendingSubscriptions: Int = 0
+	// states
+	private var buffer: [(Int, R)] = []
+	private var downstreamRecursive: Bool = false
+	private var innerRecursive: Bool = false
+	private var requested: UInt = 0
+	private var nextInnerIndex: Int = 0
+	private var pendingSubscriptions: Int = 0
 
-  private var outerFinished: Bool = false
-  private var done: Bool = false
+	private var outerFinished: Bool = false
+	private var done: Bool = false
 
-  init(
-    _ mapper: @escaping (T) throws -> any Publisher<R>,
-    _ actual: any Subscriber<R>,
-    _ maxConcurrency: UInt
-  ) {
-    self.mapper = mapper
-    self.actual = actual
-    self.maxConcurrency = maxConcurrency
-  }
+	init(
+		_ mapper: @escaping (T) throws -> any Publisher<R>,
+		_ actual: any Subscriber<R>,
+		_ maxConcurrency: UInt
+	) {
+		self.mapper = mapper
+		self.actual = actual
+		self.maxConcurrency = maxConcurrency
+	}
 
-  func onSubscribe(_ subscription: some Subscription) {
-    lock.lock()
+	func onSubscribe(_ subscription: some Subscription) {
+		self.lock.lock()
 
-    guard self.subscription == nil, !done else {
-      lock.unlock()
-      subscription.cancel()
+		guard self.subscription == nil, !self.done else {
+			self.lock.unlock()
+			subscription.cancel()
 
-      return
-    }
+			return
+		}
 
-    self.subscription = subscription
-    lock.unlock()
+		self.subscription = subscription
+		self.lock.unlock()
 
-    actual.onSubscribe(self)
-    subscription.request(maxConcurrency)
-  }
+		self.actual.onSubscribe(self)
+		subscription.request(self.maxConcurrency)
+	}
 
-  func onNext(_ item: T) {
-    lock.lock()
-    let done = self.done
-    lock.unlock()
+	func onNext(_ item: T) {
+		self.lock.lock()
+		let done = done
+		self.lock.unlock()
 
-    if done {
-      return
-    }
+		if done {
+			return
+		}
 
-    var child: any Publisher<R>
-    do {
-      child = try self.mapper(item)
+		var child: any Publisher<R>
+		do {
+			child = try self.mapper(item)
 
-    } catch {
-      onError(error)
-      return
-    }
+		} catch {
+			self.onError(error)
+			return
+		}
 
-    lock.lock()
+		self.lock.lock()
 
-    let innerIndex = nextInnerIndex
-    nextInnerIndex += 1
-    pendingSubscriptions += 1
+		let innerIndex = self.nextInnerIndex
+		self.nextInnerIndex += 1
+		self.pendingSubscriptions += 1
 
-    lock.unlock()
-    child.subscribe(FluxFlatMapInnerOperator(self, innerIndex))
-  }
+		self.lock.unlock()
+		child.subscribe(FluxFlatMapInnerOperator(self, innerIndex))
+	}
 
-  func onError(_ error: Error) {
-    lock.lock()
+	func onError(_ error: Error) {
+		self.lock.lock()
 
-    self.subscription = nil
-    self.outerFinished = true
+		self.subscription = nil
+		self.outerFinished = true
 
-    let alredyDone = done
-    done = true
+		let alredyDone = self.done
+		self.done = true
 
-    for (_, subscription) in self.subscriptions {
-      subscription.cancel()
-    }
+		for (_, subscription) in self.subscriptions {
+			subscription.cancel()
+		}
 
-    subscriptions = [:]
-    lock.unlock()
+		self.subscriptions = [:]
+		self.lock.unlock()
 
-    if alredyDone {
-      return
-    }
+		if alredyDone {
+			return
+		}
 
-    downstreamLock.lock()
-    self.actual.onError(error)
-    downstreamLock.unlock()
-  }
+		self.downstreamLock.lock()
+		self.actual.onError(error)
+		self.downstreamLock.unlock()
+	}
 
-  func onComplete() {
-    lock.lock()
+	func onComplete() {
+		self.lock.lock()
 
-    self.subscription = nil
-    self.outerFinished = true
+		self.subscription = nil
+		self.outerFinished = true
 
-    releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: outerFinished)
-  }
+		self.releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: self.outerFinished)
+	}
 
-  func request(_ demand: UInt) {
-    #validateDemand(demand, cancel, actual.onError)
+	func request(_ demand: UInt) {
+		#validateDemand(demand, self.cancel, self.actual.onError)
 
-    if downstreamRecursive {
-      self.requested ~+= demand
-      return
-    }
+		if self.downstreamRecursive {
+			self.requested ~+= demand
+			return
+		}
 
-    lock.lock()
-    if done {
-      lock.unlock()
-      return
-    }
+		self.lock.lock()
+		if self.done {
+			self.lock.unlock()
+			return
+		}
 
-    defer { releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: outerFinished) }
+		defer { releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: outerFinished) }
 
-    if demand == .max {
-      self.requested = .max
+		if demand == .max {
+			self.requested = .max
 
-      let buffer = self.buffer
-      let subscriptions = self.subscriptions
+			let buffer = buffer
+			let subscriptions = subscriptions
 
-      lock.unlock()
+			self.lock.unlock()
 
-      downstreamLock.lock()
-      downstreamRecursive = true
+			self.downstreamLock.lock()
+			self.downstreamRecursive = true
 
-      for (_, item) in buffer {
-        self.actual.onNext(item)
-      }
+			for (_, item) in buffer {
+				self.actual.onNext(item)
+			}
 
-      downstreamRecursive = false
-      downstreamLock.unlock()
+			self.downstreamRecursive = false
+			self.downstreamLock.unlock()
 
-      for (_, subscription) in subscriptions {
-        subscription.request(.max)
-      }
+			for (_, subscription) in subscriptions {
+				subscription.request(.max)
+			}
 
-      lock.lock()
-      return
-    }
+			self.lock.lock()
+			return
+		}
 
-    self.requested ~+= demand
-    while !buffer.isEmpty && self.requested > 0 {
-      let (index, value) = buffer.removeFirst()
-      self.requested -= 1
+		self.requested ~+= demand
+		while !self.buffer.isEmpty, self.requested > 0 {
+			let (index, value) = self.buffer.removeFirst()
+			self.requested -= 1
 
-      let subscription = self.subscriptions[index]
-      lock.unlock()
+			let subscription = self.subscriptions[index]
+			self.lock.unlock()
 
-      downstreamLock.lock()
-      downstreamRecursive = true
+			self.downstreamLock.lock()
+			self.downstreamRecursive = true
 
-      self.actual.onNext(value)
+			self.actual.onNext(value)
 
-      downstreamRecursive = false
-      downstreamLock.unlock()
+			self.downstreamRecursive = false
+			self.downstreamLock.unlock()
 
-      if let subscription = subscription {
-        innerRecursive = true
-        subscription.request(1)
-        innerRecursive = false
-      }
+			if let subscription {
+				self.innerRecursive = true
+				subscription.request(1)
+				self.innerRecursive = false
+			}
 
-      lock.lock()
-    }
-  }
+			self.lock.lock()
+		}
+	}
 
-  func cancel() {
-    lock.lock()
+	func cancel() {
+		self.lock.lock()
 
-    if self.done {
-      lock.unlock()
-      return
-    }
+		if self.done {
+			self.lock.unlock()
+			return
+		}
 
-    self.done = true
-    lock.unlock()
+		self.done = true
+		self.lock.unlock()
 
-    // cancel every inner subscription
-    for (_, subscription) in self.subscriptions {
-      subscription.cancel()
-    }
+		// cancel every inner subscription
+		for (_, subscription) in self.subscriptions {
+			subscription.cancel()
+		}
 
-    // cancel outer subscription
-    self.subscription?.cancel()
-  }
+		// cancel outer subscription
+		self.subscription?.cancel()
+	}
 
-  func innerSubscribe(_ subscription: some Subscription, _ index: Int) {
-    lock.lock()
+	func innerSubscribe(_ subscription: some Subscription, _ index: Int) {
+		self.lock.lock()
 
-    self.pendingSubscriptions -= 1
-    self.subscriptions[index] = subscription
+		self.pendingSubscriptions -= 1
+		self.subscriptions[index] = subscription
 
-    let demand: UInt = self.requested == .max ? .max : 1
+		let demand: UInt = self.requested == .max ? .max : 1
 
-    lock.unlock()
-    subscription.request(demand)
-  }
+		self.lock.unlock()
+		subscription.request(demand)
+	}
 
-  func innerNext(_ item: R, _ index: Int) {
-    lock.lock()
+	func innerNext(_ item: R, _ index: Int) {
+		self.lock.lock()
 
-    if self.requested == .max {
-      lock.unlock()
+		if self.requested == .max {
+			self.lock.unlock()
 
-      downstreamLock.lock()
-      downstreamRecursive = true
+			self.downstreamLock.lock()
+			self.downstreamRecursive = true
 
-      self.actual.onNext(item)
+			self.actual.onNext(item)
 
-      downstreamRecursive = false
-      downstreamLock.unlock()
+			self.downstreamRecursive = false
+			self.downstreamLock.unlock()
 
-      return
-    }
+			return
+		}
 
-    if self.requested == 0 || innerRecursive {
-      buffer.append((index, item))
-      lock.unlock()
-      return
-    }
+		if self.requested == 0 || self.innerRecursive {
+			self.buffer.append((index, item))
+			self.lock.unlock()
+			return
+		}
 
-    self.requested -= 1
-    lock.unlock()
+		self.requested -= 1
+		self.lock.unlock()
 
-    downstreamLock.lock()
-    downstreamRecursive = true
+		self.downstreamLock.lock()
+		self.downstreamRecursive = true
 
-    self.actual.onNext(item)
+		self.actual.onNext(item)
 
-    downstreamRecursive = false
-    downstreamLock.unlock()
+		self.downstreamRecursive = false
+		self.downstreamLock.unlock()
 
-    self.request(1)
-  }
+		self.request(1)
+	}
 
-  func innerError(_ error: Error, _ index: Int) {
-    lock.lock()
+	func innerError(_ error: Error, _ index: Int) {
+		self.lock.lock()
 
-    if done {
-      lock.unlock()
-      return
-    }
+		if self.done {
+			self.lock.unlock()
+			return
+		}
 
-    done = true
-    lock.unlock()
+		self.done = true
+		self.lock.unlock()
 
 		// swiftlint:disable:next identifier_name
-    for (i, subscription) in self.subscriptions where i != index {
-      subscription.cancel()
-    }
+		for (i, subscription) in self.subscriptions where i != index {
+			subscription.cancel()
+		}
 
-    downstreamLock.lock()
-    self.actual.onError(error)
-    downstreamLock.unlock()
-  }
+		self.downstreamLock.lock()
+		self.actual.onError(error)
+		self.downstreamLock.unlock()
+	}
 
-  func innerComplete(_ index: Int) {
-    lock.lock()
-    subscriptions.removeValue(forKey: index)
+	func innerComplete(_ index: Int) {
+		self.lock.lock()
+		self.subscriptions.removeValue(forKey: index)
 
-    let downstreamCompleted =
-      releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: outerFinished)
+		let downstreamCompleted =
+			self.releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: self.outerFinished)
 
-    if !downstreamCompleted {
-      requestOneMorePublisher()
-    }
-  }
+		if !downstreamCompleted {
+			self.requestOneMorePublisher()
+		}
+	}
 
-  private func requestOneMorePublisher() {
-    if maxConcurrency != .max {
-      outerLock.lock()
-      subscription?.request(1)
-      outerLock.unlock()
-    }
-  }
+	private func requestOneMorePublisher() {
+		if self.maxConcurrency != .max {
+			self.outerLock.lock()
+			self.subscription?.request(1)
+			self.outerLock.unlock()
+		}
+	}
 
-  @discardableResult
-  private func releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: Bool) -> Bool {
-    if !done && outerFinished && buffer.isEmpty && subscriptions.count + pendingSubscriptions == 0 {
-      done = true
-      lock.unlock()
-      downstreamLock.lock()
-      self.actual.onComplete()
-      downstreamLock.unlock()
-      return true
-    }
+	@discardableResult
+	private func releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: Bool) -> Bool {
+		if !self.done, outerFinished, self.buffer.isEmpty, self.subscriptions.count + self.pendingSubscriptions == 0 {
+			self.done = true
+			self.lock.unlock()
+			self.downstreamLock.lock()
+			self.actual.onComplete()
+			self.downstreamLock.unlock()
+			return true
+		}
 
-    lock.unlock()
-    return false
-  }
+		self.lock.unlock()
+		return false
+	}
 }
 
 private class FluxFlatMapInnerOperator<T, R>: Subscriber {
-  typealias Item = R
+	typealias Item = R
 
-  private let parent: FluxFlatMapOperator<T, R>
-  private let index: Int
+	private let parent: FluxFlatMapOperator<T, R>
+	private let index: Int
 
-  init(_ parent: FluxFlatMapOperator<T, R>, _ index: Int) {
-    self.parent = parent
-    self.index = index
-  }
+	init(_ parent: FluxFlatMapOperator<T, R>, _ index: Int) {
+		self.parent = parent
+		self.index = index
+	}
 
-  func onSubscribe(_ subscription: some Subscription) {
-    self.parent.innerSubscribe(subscription, self.index)
-  }
+	func onSubscribe(_ subscription: some Subscription) {
+		self.parent.innerSubscribe(subscription, self.index)
+	}
 
-  func onNext(_ item: R) {
-    self.parent.innerNext(item, self.index)
-  }
+	func onNext(_ item: R) {
+		self.parent.innerNext(item, self.index)
+	}
 
-  func onError(_ error: Error) {
-    self.parent.innerError(error, self.index)
-  }
+	func onError(_ error: Error) {
+		self.parent.innerError(error, self.index)
+	}
 
-  func onComplete() {
-    self.parent.innerComplete(self.index)
-  }
+	func onComplete() {
+		self.parent.innerComplete(self.index)
+	}
 }
 
-extension Flux {
-  public func flatMap<R>(
-    maxConcurrency: UInt = .max,
-    _ mapper: @escaping (T) throws -> any Publisher<R>
-  ) -> Flux<R> {
-    return Flux<R>(publisher: FlatMapPublisher(mapper, publisher, maxConcurrency))
-  }
+public extension Flux {
+	func flatMap<R>(
+		maxConcurrency: UInt = .max,
+		_ mapper: @escaping (T) throws -> any Publisher<R>
+	) -> Flux<R> {
+		Flux<R>(publisher: FlatMapPublisher(mapper, publisher, maxConcurrency))
+	}
 
-  public func flatMap<R, C: AsPublisher<R>>(
-    maxConcurrency: UInt = .max,
-    _ mapper: @escaping (T) throws -> C
-  ) -> Flux<R> {
-    return flatMap(maxConcurrency: maxConcurrency) { try mapper($0).asPublisher() }
-  }
+	func flatMap<R>(
+		maxConcurrency: UInt = .max,
+		_ mapper: @escaping (T) throws -> some AsPublisher<R>
+	) -> Flux<R> {
+		self.flatMap(maxConcurrency: maxConcurrency) { try mapper($0).asPublisher() }
+	}
 }

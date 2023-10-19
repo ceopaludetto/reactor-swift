@@ -1,27 +1,27 @@
 struct PeekableIterator<Iterator: IteratorProtocol>: IteratorProtocol {
-  typealias Element = Iterator.Element
+	typealias Element = Iterator.Element
 
-  private var iterator: Iterator
-  private var nextElement: Element?
+	private var iterator: Iterator
+	private var nextElement: Element?
 
-  init(_ iterator: Iterator) {
-    self.iterator = iterator
-  }
+	init(_ iterator: Iterator) {
+		self.iterator = iterator
+	}
 
-  mutating func peek() -> Element? {
-    if nextElement == nil {
-      nextElement = iterator.next()
-    }
+	mutating func peek() -> Element? {
+		if self.nextElement == nil {
+			self.nextElement = self.iterator.next()
+		}
 
-    return nextElement
-  }
+		return self.nextElement
+	}
 
-  mutating func next() -> Element? {
-    if let result = nextElement {
-      nextElement = nil
-      return result
-    }
+	mutating func next() -> Element? {
+		if let result = nextElement {
+			self.nextElement = nil
+			return result
+		}
 
-    return iterator.next()
-  }
+		return self.iterator.next()
+	}
 }

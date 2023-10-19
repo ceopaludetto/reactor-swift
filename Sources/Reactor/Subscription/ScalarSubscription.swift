@@ -1,34 +1,34 @@
 import Foundation
 import ReactiveStreams
 
-internal class ScalarSubscription<T>: Subscription {
-  private var actual: any Subscriber<T>
-  private let item: T
+class ScalarSubscription<T>: Subscription {
+	private var actual: any Subscriber<T>
+	private let item: T
 
-  private let lock: NSLock = .init()
-  private var cancelled: Bool = false
+	private let lock: NSLock = .init()
+	private var cancelled: Bool = false
 
-  init(subscriber: any Subscriber<T>, item: T) {
-    self.actual = subscriber
-    self.item = item
-  }
+	init(subscriber: any Subscriber<T>, item: T) {
+		self.actual = subscriber
+		self.item = item
+	}
 
-  func request(_ demand: UInt) {
-    #validateDemand(demand, cancel, actual.onError)
+	func request(_ demand: UInt) {
+		#validateDemand(demand, self.cancel, self.actual.onError)
 
-    lock.lock()
-    defer { lock.unlock() }
+		self.lock.lock()
+		defer { lock.unlock() }
 
-    actual.onNext(item)
-    actual.onComplete()
+		self.actual.onNext(self.item)
+		self.actual.onComplete()
 
-    self.cancelled = true
-  }
+		self.cancelled = true
+	}
 
-  func cancel() {
-    lock.lock()
-    defer { lock.unlock() }
+	func cancel() {
+		self.lock.lock()
+		defer { lock.unlock() }
 
-    self.cancelled = true
-  }
+		self.cancelled = true
+	}
 }

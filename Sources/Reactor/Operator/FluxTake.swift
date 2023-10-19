@@ -1,95 +1,95 @@
 import Foundation
 import ReactiveStreams
 
-internal class FluxTakePublisher<T>: Publisher {
-  typealias Item = T
+class FluxTakePublisher<T>: Publisher {
+	typealias Item = T
 
-  private let take: UInt
-  private let source: any Publisher<T>
+	private let take: UInt
+	private let source: any Publisher<T>
 
-  init(_ take: UInt, _ publisher: some Publisher<T>) {
-    self.take = take
-    self.source = publisher
-  }
+	init(_ take: UInt, _ publisher: some Publisher<T>) {
+		self.take = take
+		self.source = publisher
+	}
 
-  func subscribe(_ subscriber: some Subscriber<Item>) {
-    self.source.subscribe(FluxTakeOperator(take, subscriber))
-  }
+	func subscribe(_ subscriber: some Subscriber<Item>) {
+		self.source.subscribe(FluxTakeOperator(self.take, subscriber))
+	}
 }
 
-internal class FluxTakeOperator<T>: Subscriber, Subscription {
-  typealias Item = T
+class FluxTakeOperator<T>: Subscriber, Subscription {
+	typealias Item = T
 
-  private let take: UInt
-  private let actual: any Subscriber<T>
+	private let take: UInt
+	private let actual: any Subscriber<T>
 
-  private var subscription: (any Subscription)?
+	private var subscription: (any Subscription)?
 
-  private var lock: NSLock = .init()
-  private var produced: UInt = 0
-  private var done: Bool = false
+	private var lock: NSLock = .init()
+	private var produced: UInt = 0
+	private var done: Bool = false
 
-  init(_ take: UInt, _ actual: any Subscriber<T>) {
-    self.take = take
-    self.actual = actual
-  }
+	init(_ take: UInt, _ actual: any Subscriber<T>) {
+		self.take = take
+		self.actual = actual
+	}
 
-  func onSubscribe(_ subscription: some Subscription) {
-    lock.lock()
+	func onSubscribe(_ subscription: some Subscription) {
+		self.lock.lock()
 
-    guard self.subscription == nil, !done else {
-      lock.unlock()
-      self.subscription?.cancel()
+		guard self.subscription == nil, !self.done else {
+			self.lock.unlock()
+			self.subscription?.cancel()
 
-      return
-    }
+			return
+		}
 
-    self.subscription = subscription
-    lock.unlock()
+		self.subscription = subscription
+		self.lock.unlock()
 
-    actual.onSubscribe(self)
-  }
+		self.actual.onSubscribe(self)
+	}
 
-  func onNext(_ element: T) {
-    #guardLock(self.lock, self.done, .next)
+	func onNext(_ element: T) {
+		#guardLock(self.lock, self.done, .next)
 
-    if produced == take {
-      subscription?.cancel()
-      onComplete()
+		if self.produced == self.take {
+			self.subscription?.cancel()
+			self.onComplete()
 
-      return
-    }
+			return
+		}
 
-    produced += 1
-    actual.onNext(element)
-  }
+		self.produced += 1
+		self.actual.onNext(element)
+	}
 
-  func onError(_ error: Error) {
-    #guardLock(self.lock, self.done, .terminal)
-    actual.onError(error)
-  }
+	func onError(_ error: Error) {
+		#guardLock(self.lock, self.done, .terminal)
+		self.actual.onError(error)
+	}
 
-  func onComplete() {
-    #guardLock(self.lock, self.done, .terminal)
-    actual.onComplete()
-  }
+	func onComplete() {
+		#guardLock(self.lock, self.done, .terminal)
+		self.actual.onComplete()
+	}
 
-  func request(_ demand: UInt) {
-    if demand > take {
-      subscription?.request(.max)
-      return
-    }
+	func request(_ demand: UInt) {
+		if demand > self.take {
+			self.subscription?.request(.max)
+			return
+		}
 
-    subscription?.request(demand)
-  }
+		self.subscription?.request(demand)
+	}
 
-  func cancel() {
-    subscription?.cancel()
-  }
+	func cancel() {
+		self.subscription?.cancel()
+	}
 }
 
-extension Flux {
-  public func take(_ take: UInt) -> Flux<T> {
-    return Flux(publisher: FluxTakePublisher(take, self.publisher))
-  }
+public extension Flux {
+	func take(_ take: UInt) -> Flux<T> {
+		Flux(publisher: FluxTakePublisher(take, publisher))
+	}
 }

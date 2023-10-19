@@ -1,12 +1,12 @@
 import ReactiveStreams
 
-extension Mono {
-  public static func fromResult<E: Error>(_ result: Result<T, E>) -> Mono<T> {
-    switch result {
-    case .success(let value):
-      return Mono.just(value)
-    case .failure(let error):
-      return Mono.error(error)
-    }
-  }
+public extension Mono {
+	static func fromResult(_ result: Result<T, some Error>) -> Mono<T> {
+		switch result {
+		case let .success(value):
+			Mono.just(value)
+		case let .failure(error):
+			Mono.error(error)
+		}
+	}
 }

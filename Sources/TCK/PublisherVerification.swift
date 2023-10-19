@@ -1,13 +1,13 @@
 import ReactiveStreams
 
 public protocol PublisherVerification {
-  associatedtype Item
+	associatedtype Item
 
-  func createPublisher(_ elements: UInt) -> any Publisher<Item>
+	func createPublisher(_ elements: UInt) -> any Publisher<Item>
 
-  func createFailedPublisher() -> (any Publisher<Item>)?
+	func createFailedPublisher() -> (any Publisher<Item>)?
 
-  func maxElementsFromPublisher() -> UInt
+	func maxElementsFromPublisher() -> UInt
 
-  func boundedDepthOfOnNextAndRequestRecursion() -> UInt
+	func boundedDepthOfOnNextAndRequestRecursion() -> UInt
 }

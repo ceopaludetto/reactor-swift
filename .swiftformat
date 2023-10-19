@@ -1,0 +1,5 @@
+--allman false
+--indent tab
+--tabwidth 2
+--self insert
+--exclude .build

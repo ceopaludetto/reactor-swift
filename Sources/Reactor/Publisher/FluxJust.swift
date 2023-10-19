@@ -1,98 +1,98 @@
 import Foundation
 import ReactiveStreams
 
-internal class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
-  typealias Item = T
+class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
+	typealias Item = T
 
-  private let items: S
+	private let items: S
 
-  init(_ items: S) {
-    self.items = items
-  }
+	init(_ items: S) {
+		self.items = items
+	}
 
-  func subscribe(_ subscriber: some Subscriber<Item>) {
-    let subscription = FluxJustSubscription<T, S>(
-      subscriber: subscriber,
-      iterator: items.makeIterator()
-    )
+	func subscribe(_ subscriber: some Subscriber<Item>) {
+		let subscription = FluxJustSubscription<T, S>(
+			subscriber: subscriber,
+			iterator: items.makeIterator()
+		)
 
-    if subscription.isExhausted {
-      subscriber.onSubscribe(EmptySubscription())
-      subscriber.onComplete()
+		if subscription.isExhausted {
+			subscriber.onSubscribe(EmptySubscription())
+			subscriber.onComplete()
 
-      subscription.cancel()
-      return
-    }
+			subscription.cancel()
+			return
+		}
 
-    subscriber.onSubscribe(subscription)
-  }
+		subscriber.onSubscribe(subscription)
+	}
 }
 
-internal class FluxJustSubscription<T, S: Sequence<T>>: Subscription {
-  private var actual: (any Subscriber<T>)
-  private var iterator: (PeekableIterator<S.Iterator>)
+class FluxJustSubscription<T, S: Sequence<T>>: Subscription {
+	private var actual: any Subscriber<T>
+	private var iterator: PeekableIterator<S.Iterator>
 
-  private var lock: NSLock = .init()
+	private var lock: NSLock = .init()
 
-  private var requested: UInt = 0
-  private var recursion: Bool = false
-  private var cancelled: Bool = false
+	private var requested: UInt = 0
+	private var recursion: Bool = false
+	private var cancelled: Bool = false
 
-  init(subscriber: any Subscriber<T>, iterator: S.Iterator) {
-    self.actual = subscriber
-    self.iterator = PeekableIterator(iterator)
-  }
+	init(subscriber: any Subscriber<T>, iterator: S.Iterator) {
+		self.actual = subscriber
+		self.iterator = PeekableIterator(iterator)
+	}
 
-  fileprivate var isExhausted: Bool {
-    return iterator.peek() == nil
-  }
+	fileprivate var isExhausted: Bool {
+		self.iterator.peek() == nil
+	}
 
-  func request(_ demand: UInt) {
-    #validateDemand(demand, cancel, actual.onError)
+	func request(_ demand: UInt) {
+		#validateDemand(demand, self.cancel, self.actual.onError)
 
-    lock.lock()
-    requested ~+= demand
+		self.lock.lock()
+		self.requested ~+= demand
 
-    if recursion {
-      lock.unlock()
-      return
-    }
+		if self.recursion {
+			self.lock.unlock()
+			return
+		}
 
-    while !self.cancelled, requested > 0 {
-      if let next = iterator.next() {
-        self.requested -= 1
-        recursion = true
-        lock.unlock()
+		while !self.cancelled, self.requested > 0 {
+			if let next = iterator.next() {
+				self.requested -= 1
+				self.recursion = true
+				self.lock.unlock()
 
-        actual.onNext(next)
-        lock.lock()
+				self.actual.onNext(next)
+				self.lock.lock()
 
-        recursion = false
-      }
+				self.recursion = false
+			}
 
-      if iterator.peek() == nil {
-        self.cancelled = true
+			if self.iterator.peek() == nil {
+				self.cancelled = true
 
-        lock.unlock()
-        actual.onComplete()
+				self.lock.unlock()
+				self.actual.onComplete()
 
-        return
-      }
-    }
+				return
+			}
+		}
 
-    lock.unlock()
-  }
+		self.lock.unlock()
+	}
 
-  func cancel() {
-    lock.lock()
-    defer { lock.unlock() }
+	func cancel() {
+		self.lock.lock()
+		defer { lock.unlock() }
 
-    self.cancelled = true
-  }
+		self.cancelled = true
+	}
 }
 
-extension Flux {
-  public static func just(_ items: some Sequence<T>) -> Flux<T> {
-    return Flux(publisher: FluxJustPublisher(items))
-  }
+public extension Flux {
+	static func just(_ items: some Sequence<T>) -> Flux<T> {
+		Flux(publisher: FluxJustPublisher(items))
+	}
 }
