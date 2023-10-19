@@ -1,11 +1,11 @@
-#if canImport(SwiftCompilerPlugin)
-  import SwiftCompilerPlugin
-  import SwiftSyntaxMacros
+import SwiftCompilerPlugin
+import SwiftSyntaxMacros
 
-  @main
-  struct ReactorMacrosPlugin: CompilerPlugin {
-    let providingMacros: [Macro.Type] = [
-      ValidateDemandMacro.self
-    ]
-  }
-#endif
+@main
+struct ReactorMacrosPlugin: CompilerPlugin {
+  let providingMacros: [Macro.Type] = [
+    GuardLockMacro.self,
+    ReactivePublisherMacro.self,
+    ValidateDemandMacro.self,
+  ]
+}

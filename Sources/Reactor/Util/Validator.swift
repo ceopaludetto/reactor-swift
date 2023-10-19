@@ -1,5 +1,3 @@
-import Atomics
-
 public enum ValidationError: Error {
   case invalidDemand(UInt)
 }
@@ -20,39 +18,5 @@ internal struct Validator {
     }
 
     return .success(demand)
-  }
-
-  static func addCap(_ demand: UInt, _ requested: ManagedAtomic<UInt>) -> UInt? {
-    var new = demand
-    var initialRequested: UInt
-
-    repeat {
-      initialRequested = requested.load(ordering: .relaxed)
-
-      if initialRequested == .max {
-        return nil
-      }
-
-      new &+= initialRequested
-
-      if new <= 0 {
-        new = .max
-      }
-    } while !requested.weakCompareExchange(initialRequested, new)
-
-    if initialRequested > 0 {
-      return nil
-    }
-
-    return new
-  }
-}
-
-extension ManagedAtomic where Value == UInt {
-  fileprivate func weakCompareExchange(
-    _ expected: UInt,
-    _ desired: UInt
-  ) -> Bool {
-    return weakCompareExchange(expected: expected, desired: desired, ordering: .relaxed).exchanged
   }
 }

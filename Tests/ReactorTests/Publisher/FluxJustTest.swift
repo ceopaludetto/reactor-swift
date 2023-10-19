@@ -41,5 +41,21 @@ class FluxJustAsyncTest: AsyncSpec {
       expect(items).to(haveCount(100))
       expect(items).to(equal(Array(1...100)))
     }
+
+    it("battle test") {
+      let items = try await Flux.just(1...)
+        .take(1000)
+        .takeWhile { _ in true }
+        .takeUntil { _ in false }
+        .filter { _ in true }
+        .index()
+        .map { $1 }
+        .flatMap { Mono.just($0) }
+        .concatMap { Mono.just($0) }
+        .awaitList()
+
+      expect(items).to(haveCount(1000))
+      expect(items).to(equal(Array(1...1000)))
+    }
   }
 }

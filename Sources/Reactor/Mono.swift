@@ -1,16 +1,7 @@
 import ReactiveStreams
 
-public struct Mono<T>: AsPublisher {
-  internal let publisher: any Publisher<T>
-
-  internal init(publisher: some Publisher<T>) {
-    self.publisher = publisher
-  }
-
-  public func asPublisher() -> any Publisher<T> {
-    return publisher
-  }
-}
+@ReactivePublisher
+public struct Mono<T> {}
 
 extension Mono {
   public func subscribe(_ subscriber: some Subscriber<T>) {

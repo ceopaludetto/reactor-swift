@@ -1,3 +1,4 @@
+import Foundation
 import ReactiveStreams
 
 internal class FluxTakePublisher<T>: Publisher {
@@ -20,10 +21,11 @@ internal class FluxTakeOperator<T>: Subscriber, Subscription {
   typealias Item = T
 
   private let take: UInt
+  private let actual: any Subscriber<T>
 
-  private var actual: any Subscriber<T>
   private var subscription: (any Subscription)?
 
+  private var lock: NSLock = .init()
   private var produced: UInt = 0
   private var done: Bool = false
 
@@ -33,14 +35,23 @@ internal class FluxTakeOperator<T>: Subscriber, Subscription {
   }
 
   func onSubscribe(_ subscription: some Subscription) {
+    lock.lock()
+
+    guard self.subscription == nil, !done else {
+      lock.unlock()
+      self.subscription?.cancel()
+
+      return
+    }
+
     self.subscription = subscription
+    lock.unlock()
+
     actual.onSubscribe(self)
   }
 
   func onNext(_ element: T) {
-    if done {
-      return
-    }
+    #guardLock(self.lock, self.done, .next)
 
     if produced == take {
       subscription?.cancel()
@@ -54,20 +65,12 @@ internal class FluxTakeOperator<T>: Subscriber, Subscription {
   }
 
   func onError(_ error: Error) {
-    if done {
-      return
-    }
-
-    done = true
+    #guardLock(self.lock, self.done, .terminal)
     actual.onError(error)
   }
 
   func onComplete() {
-    if done {
-      return
-    }
-
-    done = true
+    #guardLock(self.lock, self.done, .terminal)
     actual.onComplete()
   }
 

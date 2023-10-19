@@ -1,3 +1,4 @@
+import Foundation
 import ReactiveStreams
 
 internal class FluxFilterPublisher<T>: Publisher {
@@ -24,6 +25,7 @@ internal class FluxFilterOperator<T>: Subscriber, Subscription {
   private var actual: any Subscriber<T>
   private var subscription: (any Subscription)?
 
+  private let lock: NSLock = .init()
   private var done: Bool = false
 
   init(_ predicate: @escaping (T) throws -> Bool, _ actual: any Subscriber<T>) {
@@ -32,14 +34,23 @@ internal class FluxFilterOperator<T>: Subscriber, Subscription {
   }
 
   func onSubscribe(_ subscription: some Subscription) {
+    lock.lock()
+
+    guard self.subscription == nil, !done else {
+      lock.unlock()
+      self.subscription?.cancel()
+
+      return
+    }
+
     self.subscription = subscription
+    lock.unlock()
+
     actual.onSubscribe(self)
   }
 
   func onNext(_ element: T) {
-    if done {
-      return
-    }
+    #guardLock(self.lock, self.done, .next)
 
     do {
       if try predicate(element) {
@@ -54,20 +65,12 @@ internal class FluxFilterOperator<T>: Subscriber, Subscription {
   }
 
   func onError(_ error: Error) {
-    if done {
-      return
-    }
-
-    done = true
+    #guardLock(self.lock, self.done, .terminal)
     actual.onError(error)
   }
 
   func onComplete() {
-    if done {
-      return
-    }
-
-    done = true
+    #guardLock(self.lock, self.done, .terminal)
     actual.onComplete()
   }
 

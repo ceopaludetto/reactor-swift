@@ -1,16 +1,8 @@
+import Foundation
 import ReactiveStreams
 
-public struct Flux<T>: AsPublisher {
-  internal let publisher: any Publisher<T>
-
-  internal init(publisher: some Publisher<T>) {
-    self.publisher = publisher
-  }
-
-  public func asPublisher() -> any Publisher<T> {
-    return publisher
-  }
-}
+@ReactivePublisher
+public struct Flux<T> {}
 
 extension Flux {
   public func subscribe(_ subscriber: some Subscriber<T>) {

@@ -1,3 +1,4 @@
+import Foundation
 import ReactiveStreams
 
 internal class FluxMapPublisher<T, R>: Publisher {
@@ -20,10 +21,11 @@ internal class FluxMapOperator<T, R>: Subscriber, Subscription {
   typealias Item = T
 
   private let mapper: (T) throws -> R
+  private let actual: any Subscriber<R>
 
-  private var actual: any Subscriber<R>
   private var subscription: (any Subscription)?
 
+  private var lock: NSLock = .init()
   private var done: Bool = false
 
   init(_ mapper: @escaping (T) throws -> R, _ actual: any Subscriber<R>) {
@@ -32,14 +34,24 @@ internal class FluxMapOperator<T, R>: Subscriber, Subscription {
   }
 
   func onSubscribe(_ subscription: some Subscription) {
+    // TODO: It's possible to write a macro who reassign the subscription?
+    lock.lock()
+
+    guard self.subscription == nil, !done else {
+      lock.unlock()
+      self.subscription?.cancel()
+
+      return
+    }
+
     self.subscription = subscription
+    lock.unlock()
+
     actual.onSubscribe(self)
   }
 
   func onNext(_ element: T) {
-    if done {
-      return
-    }
+    #guardLock(self.lock, self.done, .next)
 
     do {
       actual.onNext(try mapper(element))
@@ -49,20 +61,12 @@ internal class FluxMapOperator<T, R>: Subscriber, Subscription {
   }
 
   func onError(_ error: Error) {
-    if done {
-      return
-    }
-
-    done = true
+    #guardLock(self.lock, self.done, .terminal)
     actual.onError(error)
   }
 
   func onComplete() {
-    if done {
-      return
-    }
-
-    done = true
+    #guardLock(self.lock, self.done, .terminal)
     actual.onComplete()
   }
 

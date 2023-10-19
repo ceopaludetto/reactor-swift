@@ -1,7 +1,7 @@
 import SwiftSyntax
 import SwiftSyntaxMacros
 
-public struct ValidateDemandMacro: DeclarationMacro {
+public struct GuardLockMacro: DeclarationMacro {
   public static func expansion(
     of node: some FreestandingMacroExpansionSyntax,
     in context: some MacroExpansionContext
@@ -12,18 +12,22 @@ public struct ValidateDemandMacro: DeclarationMacro {
       throw MacroError.invalidArgumentCount(args.count, 3)
     }
 
-    let demand = args[0]
-    let cancel = args[1]
-    let onError = args[2]
+    let lock = args[0]
+    let done = args[1]
+    let type = args[2]
+
+    let isTerminal = type.as(MemberAccessExprSyntax.self)?.declName.baseName.text == "terminal"
 
     return [
       """
-      if case .failure(let error) = Validator.demand(\(raw: demand)) {
-        \(raw: cancel)()
-        \(raw: onError)(error)
-
-        return
+      \(raw: lock).lock()
+      guard !\(raw: done) else {
+      	\(raw: lock).unlock()
+      	return
       }
+
+      \(raw: isTerminal ? "\(done).toggle()" : "")
+      \(raw: lock).unlock()
       """
     ]
   }

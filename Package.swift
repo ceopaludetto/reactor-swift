@@ -14,7 +14,6 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.5.3")),
-    .package(url: "https://github.com/apple/swift-atomics.git", .upToNextMajor(from: "1.2.0")),
     .package(url: "https://github.com/Quick/Quick.git", .upToNextMajor(from: "7.0.0")),
     .package(url: "https://github.com/Quick/Nimble.git", .upToNextMajor(from: "12.0.0")),
     .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
@@ -40,14 +39,7 @@ let package = Package(
         .product(name: "SwiftDiagnostics", package: "swift-syntax"),
       ]
     ),
-    .target(
-      name: "Reactor",
-      dependencies: [
-        "ReactiveStreams",
-        "ReactorMacros",
-        .product(name: "Atomics", package: "swift-atomics"),
-      ]
-    ),
+    .target(name: "Reactor", dependencies: ["ReactiveStreams", "ReactorMacros"]),
 
     .testTarget(
       name: "ReactorTests",
@@ -57,6 +49,8 @@ let package = Package(
         "Reactor",
         "Quick",
         "Nimble",
+        .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+        .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
       ]
     ),
   ]

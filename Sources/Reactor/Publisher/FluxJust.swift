@@ -1,4 +1,4 @@
-import Atomics
+import Foundation
 import ReactiveStreams
 
 internal class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
@@ -11,92 +11,83 @@ internal class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
   }
 
   func subscribe(_ subscriber: some Subscriber<Item>) {
-    subscriber.onSubscribe(
-      FluxJustSubscription<T, S>(
-        subscriber: subscriber,
-        items: items.makeIterator()
-      )
+    let subscription = FluxJustSubscription<T, S>(
+      subscriber: subscriber,
+      iterator: items.makeIterator()
     )
+
+    if subscription.isExhausted {
+      subscriber.onSubscribe(EmptySubscription())
+      subscriber.onComplete()
+
+      subscription.cancel()
+      return
+    }
+
+    subscriber.onSubscribe(subscription)
   }
 }
 
 internal class FluxJustSubscription<T, S: Sequence<T>>: Subscription {
-  private var actual: any Subscriber<T>
-  private var items: PeekableIterator<S.Iterator>
+  private var actual: (any Subscriber<T>)
+  private var iterator: (PeekableIterator<S.Iterator>)
 
-  private let cancelled: ManagedAtomic<Bool> = .init(false)
-  private let requested: ManagedAtomic<UInt> = .init(0)
+  private var lock: NSLock = .init()
 
-  init(subscriber: any Subscriber<T>, items: S.Iterator) {
+  private var requested: UInt = 0
+  private var recursion: Bool = false
+  private var cancelled: Bool = false
+
+  init(subscriber: any Subscriber<T>, iterator: S.Iterator) {
     self.actual = subscriber
-    self.items = PeekableIterator(items)
+    self.iterator = PeekableIterator(iterator)
+  }
+
+  fileprivate var isExhausted: Bool {
+    return iterator.peek() == nil
   }
 
   func request(_ demand: UInt) {
     #validateDemand(demand, cancel, actual.onError)
 
-    if let new = Validator.addCap(demand, requested) {
-      if new == .max {
-        self.fast()
-        return
+    lock.lock()
+    requested ~+= demand
+
+    if recursion {
+      lock.unlock()
+      return
+    }
+
+    while !self.cancelled, requested > 0 {
+      if let next = iterator.next() {
+        self.requested -= 1
+        recursion = true
+        lock.unlock()
+
+        actual.onNext(next)
+        lock.lock()
+
+        recursion = false
       }
 
-      self.slow(new)
+      if iterator.peek() == nil {
+        self.cancelled = true
+
+        lock.unlock()
+        actual.onComplete()
+
+        return
+      }
     }
+
+    lock.unlock()
   }
 
   func cancel() {
-    self.cancelled.store(true, ordering: .relaxed)
-  }
+    lock.lock()
+    defer { lock.unlock() }
 
-  private func fast() {
-    while true {
-      if cancelled.load(ordering: .relaxed) {
-        return
-      }
-
-      if let item = items.next() {
-        actual.onNext(item)
-      }
-
-      if items.peek() == nil {
-        actual.onComplete()
-        return
-      }
-    }
-  }
-
-  private func slow(_ demand: UInt) {
-    var sent: UInt = 0
-    var new: UInt = demand
-
-    while true {
-      while sent != new {
-        if cancelled.load(ordering: .relaxed) {
-          return
-        }
-
-        if let item = items.next() {
-          sent += 1
-          actual.onNext(item)
-        }
-
-        if items.peek() == nil {
-          actual.onComplete()
-          return
-        }
-      }
-
-      new = requested.load(ordering: .relaxed)
-
-      if sent == new {
-        if requested.loadThenWrappingDecrement(by: sent, ordering: .relaxed) - sent == 0 {
-          return
-        }
-
-        sent = 0
-      }
-    }
+    self.cancelled = true
   }
 }
 
