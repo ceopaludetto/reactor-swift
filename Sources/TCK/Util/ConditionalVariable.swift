@@ -1,7 +1,7 @@
 import Foundation
 
 class ConditionalVariable<T> {
-  public var value: T? = nil
+  public var value: T?
   private let group: DispatchGroup = .init()
 
   func dispatch(_ value: T) {

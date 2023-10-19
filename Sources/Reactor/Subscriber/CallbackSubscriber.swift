@@ -10,7 +10,7 @@ internal class CallbackSubscriber<T>: Subscriber {
   private let onCompleteCallback: (() -> Void)?
 
   init(
-  	onSubscribe: ((any Subscription) -> Void)? = nil,
+    onSubscribe: ((any Subscription) -> Void)? = nil,
     onNext: ((T) -> Void)? = nil,
     onError: ((Error) -> Void)? = nil,
     onComplete: (() -> Void)? = nil

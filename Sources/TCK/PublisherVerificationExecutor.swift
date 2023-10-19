@@ -1,3 +1,4 @@
+// swiftlint:disable identifier_name
 import Nimble
 import Quick
 import ReactiveStreams
@@ -76,7 +77,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
         }
 
         it("createPublisher1MustProduceAStreamOfExactly1Element") {
-          try createTestContext(verification, 1) { publisher, subscriber in
+          try createTestContext(verification, 1) { _, subscriber in
             subscriber.requestNext(1)
             subscriber.expectNext()
 
@@ -85,7 +86,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
         }
 
         it("createPublisher3MustProduceAStreamOfExactly3Elements") {
-          try createTestContext(verification, 3) { publisher, subscriber in
+          try createTestContext(verification, 3) { _, subscriber in
             subscriber.requestNext(3)
             subscriber.expectNext(3)
 
@@ -95,7 +96,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec101") {
           it("subscriptionRequestMustResultInTheCorrectNumberOfProducedElements") {
-            try createTestContext(verification, 5) { publisher, subscriber in
+            try createTestContext(verification, 5) { _, subscriber in
               subscriber.expectNone()
 
               subscriber.requestNext(1)
@@ -116,7 +117,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec102") {
           it("maySignalLessThanRequestedAndTerminateSubscription") {
-            try createTestContext(verification, 3) { publisher, subscriber in
+            try createTestContext(verification, 3) { _, subscriber in
               subscriber.requestNext(10)
               subscriber.expectNext(3)
               subscriber.expectCompletion()
@@ -126,7 +127,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec105") {
           it("mustSignalOnCompleteWhenFiniteStreamTerminates") {
-            try createTestContext(verification, 3) { publisher, subscriber in
+            try createTestContext(verification, 3) { _, subscriber in
               subscriber.requestNext()
               subscriber.requestNext()
               subscriber.requestNext()
@@ -142,7 +143,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec107") {
           it("mustNotEmitFurtherSignalsOnceOnCompleteHasBeenSignalled") {
-            try createTestContext(verification, 1) { publisher, subscriber in
+            try createTestContext(verification, 1) { _, subscriber in
               subscriber.requestNext(10)
               subscriber.expectNext()
               subscriber.expectCompletion()
@@ -159,22 +160,19 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
           }
 
           it("mustIssueOnSubscribeForNonNullSubscriber") {
-            try createTestContext(verification, 0) { publisher, subscriber in
+            try createTestContext(verification, 0) { _, subscriber in
               expect(subscriber.subscription.value).notTo(beNil())
               expect(subscriber.registeredCalls.first).to(equal(.onSubscribe))
             }
           }
 
-          xit(
-            "mayRejectCallsToSubscribeIfPublisherIsUnableOrUnwillingToServeThemRejectionMustTriggerOnErrorAfterOnSubscribe"
-          ) {
-
-          }
+					// swiftlint:disable:next line_length
+          xit("mayRejectCallsToSubscribeIfPublisherIsUnableOrUnwillingToServeThemRejectionMustTriggerOnErrorAfterOnSubscribe") {}
         }
 
         context("spec302") {
           it("mustAllowSynchronousRequestCallsFromOnNextAndOnSubscribe") {
-            try createTestContext(verification, 6) { publisher, subscriber in
+            try createTestContext(verification, 6) { _, subscriber in
               subscriber.requestNext(1)
               subscriber.requestNext(1)
               subscriber.requestNext(1)
@@ -196,7 +194,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec306") {
           it("afterSubscriptionIsCancelledRequestMustBeNops") {
-            try createTestContext(verification, 3) { publisher, subscriber in
+            try createTestContext(verification, 3) { _, subscriber in
               subscriber.cancel()
 
               subscriber.requestNext()
@@ -211,7 +209,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec307") {
           it("afterSubscriptionIsCancelledAdditionalCancelationsMustBeNops") {
-            try createTestContext(verification, 1) { publisher, subscriber in
+            try createTestContext(verification, 1) { _, subscriber in
               let subscription = subscriber.subscription.value
               expect(subscription).notTo(beNil())
 
@@ -227,7 +225,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec309") {
           it("requestZeroMustSignalIllegalArgumentException") {
-            try createTestContext(verification, 10) { publisher, subscriber in
+            try createTestContext(verification, 10) { _, subscriber in
               subscriber.requestNext(0)
               subscriber.expectAnyError()
             }
@@ -240,7 +238,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec312") {
           xit("cancelMustMakeThePublisherToEventuallyStopSignaling") {
-            try createTestContext(verification, 20) { publisher, subscriber in
+            try createTestContext(verification, 20) { _, subscriber in
               subscriber.requestNext(10)
               subscriber.requestNext(5)
 
@@ -275,7 +273,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec317") {
           it("mustSupportAPendingElementCountUpToLongMaxValue") {
-            try createTestContext(verification, 3) { publisher, subscriber in
+            try createTestContext(verification, 3) { _, subscriber in
               subscriber.requestNext(.max)
 
               subscriber.expectNext(3)
@@ -286,7 +284,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
           }
 
           it("mustSupportACumulativePendingElementCountUpToLongMaxValue") {
-            try createTestContext(verification, 3) { publisher, subscriber in
+            try createTestContext(verification, 3) { _, subscriber in
               subscriber.requestNext(.max / 2)
               subscriber.requestNext(.max / 2)
               subscriber.requestNext(1)
@@ -299,7 +297,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
           }
 
           it("mustNotSignalOnErrorWhenPendingAboveLongMaxValue") {
-            try createTestContext(verification, .max) { publisher, subscriber in
+            try createTestContext(verification, .max) { _, subscriber in
               // arbitrarily set limit on nuber of request calls signalled, we expect overflow after already 2 calls,
               // so 10 is relatively high and safe even if arbitrarily chosen
               var calls = 10
@@ -315,7 +313,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
                 subscriber.cancel()
               }
 
-              // eventually triggers `onNext`, which will then trigger up to `callsCounter` times `request(Long.MAX_VALUE - 1)`
+              // eventually triggers `onNext`, which will then trigger up to `callsCounter` times `request(.max - 1)`
               // we're pretty sure to overflow from those
               subscriber.requestNext()
               subscriber.expectNoErrors()
@@ -334,7 +332,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
         context("spec104") {
           it("mustSignalOnErrorWhenFails") {
             // TODO: actually is broken
-            try createFailedTestContext(verification) { publisher, subscriber in
+            try createFailedTestContext(verification) { _, subscriber in
               expect(subscriber.expectAnyError()).notTo(beNil())
               expect(subscriber.registeredCalls).to(equal([.onSubscribe, .onError]))
             }
@@ -343,7 +341,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
 
         context("spec105") {
           it("emptyStreamMustTerminateBySignallingOnComplete") {
-            try createTestContext(verification, 0) { publisher, subscriber in
+            try createTestContext(verification, 0) { _, subscriber in
               subscriber.requestNext()
 
               subscriber.expectCompletion()
@@ -391,9 +389,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
             subscriber2.cancel()
           }
 
-          it(
-            "mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingOneByOne"
-          ) {
+          it("mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingOneByOne") {
             try createTestContextWithMultipleSubscribers(verification, 5, 3) {
               let subscriber1 = $1[0]
               let subscriber2 = $1[1]
@@ -439,9 +435,7 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
             }
           }
 
-          it(
-            "mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfront"
-          ) {
+          it("mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfront") {
             try createTestContextWithMultipleSubscribers(verification, 3, 3) {
               let subscriber1 = $1[0]
               let subscriber2 = $1[1]
@@ -460,9 +454,8 @@ public class PublisherVerificationExecutor: Quick.SyncDSLUser {
             }
           }
 
-          it(
-            "mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfrontAndCompleteAsExpected"
-          ) {
+					// swiftlint:disable:next line_length
+          it("mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfrontAndCompleteAsExpected") {
             try createTestContextWithMultipleSubscribers(verification, 3, 3) {
               let subscriber1 = $1[0]
               let subscriber2 = $1[1]

@@ -1,5 +1,5 @@
 {
 	"[swift]": {
-		"editor.defaultFormatter": "vknabel.vscode-apple-swift-format"
+		"editor.defaultFormatter": "vknabel.vscode-swiftlint"
 	}
 }

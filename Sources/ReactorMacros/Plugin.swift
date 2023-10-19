@@ -6,6 +6,6 @@ struct ReactorMacrosPlugin: CompilerPlugin {
   let providingMacros: [Macro.Type] = [
     GuardLockMacro.self,
     ReactivePublisherMacro.self,
-    ValidateDemandMacro.self,
+    ValidateDemandMacro.self
   ]
 }

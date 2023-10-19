@@ -291,6 +291,7 @@ internal class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
     done = true
     lock.unlock()
 
+		// swiftlint:disable:next identifier_name
     for (i, subscription) in self.subscriptions where i != index {
       subscription.cancel()
     }
@@ -321,12 +322,8 @@ internal class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
   }
 
   @discardableResult
-  private func releaseLockThenSendCompletionDownstreamIfNeeded(
-    outerFinished: Bool
-  ) -> Bool {
-    if !done && outerFinished && buffer.isEmpty
-      && subscriptions.count + pendingSubscriptions == 0
-    {
+  private func releaseLockThenSendCompletionDownstreamIfNeeded(outerFinished: Bool) -> Bool {
+    if !done && outerFinished && buffer.isEmpty && subscriptions.count + pendingSubscriptions == 0 {
       done = true
       lock.unlock()
       downstreamLock.lock()

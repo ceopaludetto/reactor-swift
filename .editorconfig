@@ -4,3 +4,6 @@ indent_style = tab
 tab_width = 2
 insert_final_newline = true
 
+[*.{yml,yaml}]
+indent_size = 2
+indent_style = space
