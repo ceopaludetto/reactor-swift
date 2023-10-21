@@ -1,0 +1,320 @@
+# Operators
+
+List of operators to implement:
+
+## Flux
+
+- [ ] all
+- [ ] any
+- [ ] as
+- [ ] blockFirst
+- [ ] blockLast
+- [ ] buffer
+- [ ] bufferTimeout
+- [ ] bufferUntil
+- [ ] bufferUntilChanged
+- [ ] bufferWhen
+- [ ] bufferWhile
+- [ ] cache
+- [ ] cancelOn
+- [ ] cast
+- [ ] checkpoint
+- [ ] collect
+- [ ] collectList
+- [ ] collectMap
+- [ ] collectMultimap
+- [ ] collectSortedList
+- [ ] combineLatest
+- [ ] concat
+- [ ] concatDelayError
+- [x] concatMap
+- [ ] concatMapDelayError
+- [ ] concatMapIterable
+- [ ] concatWith
+- [ ] concatWithValues
+- [ ] contextCapture
+- [ ] contextWrite
+- [ ] count
+- [ ] create
+- [ ] defaultIfEmpty
+- [ ] defer
+- [ ] deferContextual
+- [ ] delayElements
+- [ ] delaySequence
+- [ ] delaySubscription
+- [ ] delayUntil
+- [ ] dematerialize
+- [ ] distinct
+- [ ] distinctUntilChanged
+- [x] doAfterTerminate
+- [ ] doFinally
+- [ ] doFirst
+- [x] doOnCancel
+- [x] doOnComplete
+- [ ] doOnDiscard
+- [ ] doOnEach
+- [x] doOnError
+- [x] doOnNext
+- [x] doOnRequest
+- [x] doOnSubscribe
+- [x] doOnTerminate
+- [ ] elapsed
+- [ ] elementAt
+- [x] empty
+- [ ] error
+- [ ] expand
+- [ ] expandDeep
+- [x] filter
+- [ ] filterWhen
+- [ ] first
+- [ ] firstWithSignal
+- [ ] firstWithValue
+- [x] flatMap
+- [ ] flatMapDelayError
+- [ ] flatMapIterable
+- [ ] flatMapSequential
+- [ ] flatMapSequentialDelayError
+- [ ] from
+- [x] fromArray (not needed, use `just`)
+- [x] fromIterable (not needed, use `just`)
+- [ ] fromStream
+- [ ] generate
+- [ ] getPrefetch
+- [ ] groupBy
+- [ ] groupJoin
+- [ ] handle
+- [ ] hasElement
+- [ ] hasElements
+- [ ] hide
+- [ ] ignoreElements
+- [x] index
+- [ ] interval
+- [ ] join
+- [ ] just
+- [x] last
+- [ ] limitRate
+- [ ] limitRequest
+- [ ] log
+- [x] map
+- [ ] mapNotNull
+- [ ] materialize
+- [ ] merge
+- [ ] mergeComparing
+- [ ] mergeComparingDelayError
+- [ ] mergeComparingWith
+- [ ] mergeDelayError
+- [ ] mergeOrdered
+- [ ] mergeOrderedWith
+- [ ] mergePriority
+- [ ] mergePriorityDelayError
+- [ ] mergeSequential
+- [ ] mergeSequentialDelayError
+- [ ] mergeWith
+- [ ] metrics
+- [ ] name
+- [ ] never
+- [ ] next
+- [ ] ofType
+- [ ] onAssembly
+- [ ] onBackpressureBuffer
+- [ ] onBackpressureDrop
+- [ ] onBackpressureError
+- [ ] onBackpressureLatest
+- [ ] onErrorComplete
+- [ ] onErrorContinue
+- [ ] onErrorMap
+- [ ] onErrorResume
+- [ ] onErrorReturn
+- [ ] onErrorStop
+- [ ] onTerminateDetach
+- [ ] or
+- [ ] parallel
+- [ ] publish
+- [ ] publishNext
+- [ ] publishOn
+- [ ] push
+- [ ] range
+- [ ] reduce
+- [ ] reduceWith
+- [ ] repeat
+- [ ] repeatWhen
+- [ ] replay
+- [ ] retry
+- [ ] retryWhen
+- [ ] sample
+- [ ] sampleFirst
+- [ ] sampleTimeout
+- [ ] scan
+- [ ] scanWith
+- [ ] share
+- [ ] shareNext
+- [ ] single
+- [ ] singleOrEmpty
+- [x] skip
+- [ ] skipLast
+- [ ] skipUntil
+- [ ] skipUntilOther
+- [x] skipWhile
+- [ ] sort
+- [ ] startWith
+- [ ] subscribe
+- [ ] subscribeOn
+- [ ] subscribeWith
+- [ ] switchIfEmpty
+- [ ] switchMap
+- [ ] switchOnFirst
+- [ ] switchOnNext
+- [ ] tag
+- [x] take
+  - [x] (UInt)
+  - [ ] (TimeInterval)
+- [ ] takeLast
+- [x] takeUntil
+- [ ] takeUntilOther
+- [x] takeWhile
+- [ ] tap
+- [ ] then
+- [ ] thenEmpty
+- [ ] thenMany
+- [ ] timed
+- [ ] timeout
+- [ ] timestamp
+- [ ] toIterable
+- [ ] toStream
+- [ ] transform
+- [ ] transformDeferred
+- [ ] transformDeferredContextual
+- [ ] using
+- [ ] usingWhen
+- [ ] window
+- [ ] windowTimeout
+- [ ] windowUntil
+- [ ] windowUntilChanged
+- [ ] windowWhen
+- [ ] windowWhile
+- [ ] withLatestFrom
+- [ ] zip
+- [ ] zipWith
+- [ ] zipWithIterable
+
+## Mono
+
+- [ ] and
+- [ ] as
+- [ ] block
+- [ ] blockOptional
+- [ ] cache
+- [ ] cacheInvalidateIf
+- [ ] cacheInvalidateWhen
+- [ ] cancelOn
+- [ ] cast
+- [ ] checkpoint
+- [ ] concatWith
+- [ ] contextCapture
+- [ ] contextWrite
+- [ ] create
+- [ ] defaultIfEmpty
+- [ ] defer
+- [ ] deferContextual
+- [ ] delay
+- [ ] delayElement
+- [ ] delaySubscription
+- [ ] delayUntil
+- [ ] dematerialize
+- [x] doAfterTerminate
+- [ ] doFinally
+- [ ] doFirst
+- [x] doOnCancel
+- [ ] doOnDiscard
+- [ ] doOnEach
+- [x] doOnError
+- [x] doOnNext
+- [x] doOnRequest
+- [x] doOnSubscribe
+- [x] doOnSuccess
+- [x] doOnTerminate
+- [ ] elapsed
+- [x] empty
+- [x] error
+- [ ] expand
+- [ ] expandDeep
+- [x] filter
+- [ ] filterWhen
+- [ ] first
+- [ ] firstWithSignal
+- [ ] firstWithValue
+- [ ] flatMap
+- [ ] flatMapIterable
+- [ ] flatMapMany
+- [ ] flux
+- [ ] from
+- [ ] fromCallable
+- [ ] fromCompletionStage
+- [ ] fromDirect
+- [ ] fromFuture
+- [ ] fromRunnable
+- [ ] fromSupplier
+- [ ] handle
+- [ ] hasElement
+- [ ] hide
+- [ ] ignoreElement
+- [ ] ignoreElements
+- [x] just
+- [x] justOrEmpty
+- [ ] log
+- [x] map
+- [ ] mapNotNull
+- [ ] materialize
+- [ ] mergeWith
+- [ ] metrics
+- [ ] name
+- [ ] never
+- [ ] ofType
+- [ ] onAssembly
+- [ ] onErrorComplete
+- [ ] onErrorContinue
+- [ ] onErrorMap
+- [ ] onErrorResume
+- [ ] onErrorReturn
+- [ ] onErrorStop
+- [ ] onTerminateDetach
+- [ ] or
+- [ ] publish
+- [ ] publishOn
+- [ ] repeat
+- [ ] repeatWhen
+- [ ] repeatWhenEmpty
+- [ ] retry
+- [ ] retryWhen
+- [ ] sequenceEqual
+- [ ] share
+- [ ] single
+- [ ] singleOptional
+- [ ] subscribe
+- [ ] subscribeOn
+- [ ] subscribeWith
+- [ ] switchIfEmpty
+- [ ] tag
+- [ ] take
+- [ ] takeUntilOther
+- [ ] tap
+- [ ] then
+- [ ] thenEmpty
+- [ ] thenMany
+- [ ] thenReturn
+- [ ] timed
+- [ ] timeout
+- [ ] timestamp
+- [ ] toFuture
+- [ ] toString
+- [ ] transform
+- [ ] transformDeferred
+- [ ] transformDeferredContextual
+- [ ] using
+- [ ] usingWhen
+- [ ] when
+- [ ] whenDelayError
+- [ ] zip
+- [ ] zipDelayError
+- [ ] zipWhen
+- [ ] zipWith

@@ -1,4 +1,3 @@
-import Foundation
 import ReactiveStreams
 
 class CallbackSubscriber<T>: Subscriber {

@@ -1,7 +1,6 @@
-import Foundation
 import ReactiveStreams
 
-class FluxTakePublisher<T>: Publisher {
+final class FluxTakePublisher<T>: Publisher {
 	typealias Item = T
 
 	private let take: UInt
@@ -17,17 +16,13 @@ class FluxTakePublisher<T>: Publisher {
 	}
 }
 
-class FluxTakeOperator<T>: Subscriber, Subscription {
+final class FluxTakeOperator<T>: BaseOperator, Subscriber, Subscription {
 	typealias Item = T
 
-	private let take: UInt
 	private let actual: any Subscriber<T>
 
-	private var subscription: (any Subscription)?
-
-	private var lock: NSLock = .init()
+	private let take: UInt
 	private var produced: UInt = 0
-	private var done: Bool = false
 
 	init(_ take: UInt, _ actual: any Subscriber<T>) {
 		self.take = take
@@ -35,43 +30,35 @@ class FluxTakeOperator<T>: Subscriber, Subscription {
 	}
 
 	func onSubscribe(_ subscription: some Subscription) {
-		self.lock.lock()
-
-		guard self.subscription == nil, !self.done else {
-			self.lock.unlock()
-			self.subscription?.cancel()
-
-			return
+		self.tryLock(.subscription(subscription)) {
+			self.actual.onSubscribe(self)
 		}
-
-		self.subscription = subscription
-		self.lock.unlock()
-
-		self.actual.onSubscribe(self)
 	}
 
 	func onNext(_ element: T) {
-		#guardLock(self.lock, self.done, .next)
+		self.tryLock(.next) {
+			if self.produced == self.take {
+				self.subscription?.cancel()
+				self.onComplete()
 
-		if self.produced == self.take {
-			self.subscription?.cancel()
-			self.onComplete()
+				return
+			}
 
-			return
+			self.produced += 1
+			self.actual.onNext(element)
 		}
-
-		self.produced += 1
-		self.actual.onNext(element)
 	}
 
 	func onError(_ error: Error) {
-		#guardLock(self.lock, self.done, .terminal)
-		self.actual.onError(error)
+		self.tryLock(.terminal) {
+			self.actual.onError(error)
+		}
 	}
 
 	func onComplete() {
-		#guardLock(self.lock, self.done, .terminal)
-		self.actual.onComplete()
+		self.tryLock(.terminal) {
+			self.actual.onComplete()
+		}
 	}
 
 	func request(_ demand: UInt) {

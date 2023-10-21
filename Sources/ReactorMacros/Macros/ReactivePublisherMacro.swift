@@ -28,8 +28,8 @@ public struct ReactivePublisherMacro: ExtensionMacro, MemberMacro {
 		try [
 			ExtensionDeclSyntax(
 				"""
-				extension \(type): AsPublisher {
-					public func asPublisher() -> any Publisher<T> {
+				extension \(type): PublisherConvertible {
+					public func toPublisher() -> any Publisher<T> {
 						return self.publisher
 					}
 				}

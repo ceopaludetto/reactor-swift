@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-class MonoErrorPublisher<T>: Publisher {
+final class MonoErrorPublisher<T>: Publisher {
 	typealias Item = T
 
 	private let error: Error

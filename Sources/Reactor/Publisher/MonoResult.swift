@@ -1,5 +1,3 @@
-import ReactiveStreams
-
 public extension Mono {
 	static func fromResult(_ result: Result<T, some Error>) -> Mono<T> {
 		switch result {

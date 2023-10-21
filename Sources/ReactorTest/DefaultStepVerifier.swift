@@ -1,4 +1,5 @@
 import ReactiveStreams
+import Reactor
 
 public struct DefaultStepVerifier<T>: StepVerifier {
 	public typealias Item = T
@@ -7,6 +8,10 @@ public struct DefaultStepVerifier<T>: StepVerifier {
 
 	public init(_ publisher: any Publisher<T>) {
 		self.publisher = publisher
+	}
+
+	public init(_ publisher: some PublisherConvertible<T>) {
+		self.publisher = publisher.toPublisher()
 	}
 
 	public func assertNext(_: @escaping (T) -> Void) -> Self {
@@ -32,6 +37,8 @@ public struct DefaultStepVerifier<T>: StepVerifier {
 	public func expectComplete() -> Self {
 		self
 	}
+
+	public func verify() {}
 
 	public func verifyError() {}
 

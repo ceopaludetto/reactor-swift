@@ -11,6 +11,7 @@ public protocol StepVerifier<Item> {
 	func expectError(_ error: Error) -> Self
 	func expectComplete() -> Self
 
+	func verify()
 	func verifyError()
 	func verifyError(_ error: Error)
 	func verifyComplete()
@@ -18,12 +19,12 @@ public protocol StepVerifier<Item> {
 
 public extension Flux {
 	func test() -> some StepVerifier<T> {
-		DefaultStepVerifier(self.asPublisher())
+		DefaultStepVerifier(self)
 	}
 }
 
 public extension Mono {
 	func test() -> some StepVerifier<T> {
-		DefaultStepVerifier(self.asPublisher())
+		DefaultStepVerifier(self)
 	}
 }

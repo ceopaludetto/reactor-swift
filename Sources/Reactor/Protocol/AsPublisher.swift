@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-public protocol AsPublisher<Item> {
+public protocol PublisherConvertible<Item> {
 	associatedtype Item
-	func asPublisher() -> any Publisher<Item>
+	func toPublisher() -> any Publisher<Item>
 }

@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-class MonoEmptyPublisher<T>: Publisher {
+final class MonoEmptyPublisher<T>: Publisher {
 	typealias Item = T
 
 	func subscribe(_ subscriber: some Subscriber<Item>) {

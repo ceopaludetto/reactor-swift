@@ -11,25 +11,17 @@ let package = Package(
 	products: [
 		.library(name: "ReactiveStreams", targets: ["ReactiveStreams"]),
 		.library(name: "Reactor", targets: ["Reactor"]),
+		.library(name: "ReactorTest", targets: ["ReactorTest"]),
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.5.3")),
-		.package(url: "https://github.com/Quick/Quick.git", .upToNextMajor(from: "7.0.0")),
-		.package(url: "https://github.com/Quick/Nimble.git", .upToNextMajor(from: "12.0.0")),
 		.package(url: "https://github.com/pointfreeco/swift-macro-testing", .upToNextMajor(from: "0.2.1")),
+		.package(url: "https://github.com/apple/swift-testing.git", branch: "main"),
 		.package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
 	],
 	targets: [
+		.target(name: "COpenCombineHelpers"),
 		.target(name: "ReactiveStreams"),
-		.target(
-			name: "TCK",
-			dependencies: [
-				"ReactiveStreams",
-				"Quick",
-				"Nimble",
-				.product(name: "Logging", package: "swift-log"),
-			]
-		),
 
 		.macro(
 			name: "ReactorMacros",
@@ -40,24 +32,39 @@ let package = Package(
 				.product(name: "SwiftDiagnostics", package: "swift-syntax"),
 			]
 		),
-		.target(name: "Reactor", dependencies: ["ReactiveStreams", "ReactorMacros"]),
-		.target(name: "ReactorTest", dependencies: ["ReactiveStreams", "Reactor"]),
+		.target(
+			name: "Reactor",
+			dependencies: [
+				"ReactiveStreams",
+				"ReactorMacros",
+				"COpenCombineHelpers",
+				.product(name: "Logging", package: "swift-log"),
+			]
+		),
+		.target(
+			name: "ReactorTest",
+			dependencies: [
+				"ReactiveStreams",
+				"Reactor",
+				.product(name: "Testing", package: "swift-testing"),
+			]
+		),
 
 		.testTarget(
 			name: "ReactorTests",
 			dependencies: [
-				"TCK",
 				"Reactor",
-				"Quick",
-				"Nimble",
+				.product(name: "Testing", package: "swift-testing"),
 			]
 		),
 		.testTarget(
-			name: "ReactorMacrosTest",
+			name: "ReactorMacrosTests",
 			dependencies: [
 				"ReactorMacros",
+				.product(name: "Testing", package: "swift-testing"),
 				.product(name: "MacroTesting", package: "swift-macro-testing"),
 			]
 		),
-	]
+	],
+	cxxLanguageStandard: .cxx17
 )
