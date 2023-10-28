@@ -2,7 +2,7 @@
 
 public extension Optional {
 	func toMono() -> Mono<Wrapped> {
-		Mono.fromOptional(self)
+		Mono.justOrEmpty(self)
 	}
 }
 

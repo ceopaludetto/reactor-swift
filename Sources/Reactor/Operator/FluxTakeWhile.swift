@@ -1,7 +1,6 @@
-import Foundation
 import ReactiveStreams
 
-class FluxTakeWhilePublisher<T>: Publisher {
+final class FluxTakeWhilePublisher<T>: Publisher {
 	typealias Item = T
 
 	private let predicate: (T) throws -> Bool
@@ -17,16 +16,12 @@ class FluxTakeWhilePublisher<T>: Publisher {
 	}
 }
 
-class FluxTakeWhileOperator<T>: Subscriber, Subscription {
+final class FluxTakeWhileOperator<T>: BaseOperator, Subscriber, Subscription {
 	typealias Item = T
 
-	private let predicate: (T) throws -> Bool
 	private let actual: any Subscriber<T>
 
-	private var subscription: (any Subscription)?
-
-	private let lock: NSLock = .init()
-	private var done: Bool = false
+	private let predicate: (T) throws -> Bool
 
 	init(_ predicate: @escaping (T) throws -> Bool, _ actual: any Subscriber<T>) {
 		self.predicate = predicate
@@ -34,46 +29,36 @@ class FluxTakeWhileOperator<T>: Subscriber, Subscription {
 	}
 
 	func onSubscribe(_ subscription: some Subscription) {
-		self.lock.lock()
-
-		guard self.subscription == nil, !self.done else {
-			self.lock.unlock()
-			self.subscription?.cancel()
-
-			return
+		self.tryLock(.subscription(subscription)) {
+			self.actual.onSubscribe(self)
 		}
-
-		self.subscription = subscription
-		self.lock.unlock()
-
-		self.actual.onSubscribe(self)
 	}
 
 	func onNext(_ element: T) {
-		#guardLock(self.lock, self.done, .next)
+		self.tryLock(.next) {
+			runCatching(self.onError) {
+				if try !self.predicate(element) {
+					self.subscription?.cancel()
+					self.onComplete()
 
-		do {
-			if try !self.predicate(element) {
-				self.subscription?.cancel()
-				self.onComplete()
+					return
+				}
 
-				return
+				self.actual.onNext(element)
 			}
-
-			self.actual.onNext(element)
-		} catch {
-			self.onError(error)
 		}
 	}
 
 	func onError(_ error: Error) {
-		#guardLock(self.lock, self.done, .terminal)
-		self.actual.onError(error)
+		self.tryLock(.terminal) {
+			self.actual.onError(error)
+		}
 	}
 
 	func onComplete() {
-		#guardLock(self.lock, self.done, .terminal)
-		self.actual.onComplete()
+		self.tryLock(.terminal) {
+			self.actual.onComplete()
+		}
 	}
 
 	func request(_ demand: UInt) {

@@ -7,7 +7,7 @@ public extension Flux {
 		Flux<R>(publisher: FlatMapPublisher(mapper, publisher, 1))
 	}
 
-	func concatMap<R>(_ mapper: @escaping (T) throws -> some AsPublisher<R>) -> Flux<R> {
-		self.concatMap { try mapper($0).asPublisher() }
+	func concatMap<R>(_ mapper: @escaping (T) throws -> some PublisherConvertible<R>) -> Flux<R> {
+		self.concatMap { try mapper($0).toPublisher() }
 	}
 }

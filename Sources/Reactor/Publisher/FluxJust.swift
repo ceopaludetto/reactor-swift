@@ -1,7 +1,6 @@
-import Foundation
 import ReactiveStreams
 
-class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
+final class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
 	typealias Item = T
 
 	private let items: S
@@ -28,11 +27,11 @@ class FluxJustPublisher<T, S: Sequence<T>>: Publisher {
 	}
 }
 
-class FluxJustSubscription<T, S: Sequence<T>>: Subscription {
+final class FluxJustSubscription<T, S: Sequence<T>>: Subscription {
 	private var actual: any Subscriber<T>
 	private var iterator: PeekableIterator<S.Iterator>
 
-	private var lock: NSLock = .init()
+	private var lock: UnfairLock = .allocate()
 
 	private var requested: UInt = 0
 	private var recursion: Bool = false
@@ -43,12 +42,21 @@ class FluxJustSubscription<T, S: Sequence<T>>: Subscription {
 		self.iterator = PeekableIterator(iterator)
 	}
 
+	deinit {
+		self.lock.deallocate()
+	}
+
 	fileprivate var isExhausted: Bool {
 		self.iterator.peek() == nil
 	}
 
 	func request(_ demand: UInt) {
-		#validateDemand(demand, self.cancel, self.actual.onError)
+		if case let .failure(error) = Validator.demand(demand) {
+			self.cancel()
+			self.actual.onError(error)
+
+			return
+		}
 
 		self.lock.lock()
 		self.requested ~+= demand

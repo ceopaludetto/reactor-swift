@@ -1,7 +1,6 @@
-import Foundation
 import ReactiveStreams
 
-class FlatMapPublisher<T, R>: Publisher {
+final class FlatMapPublisher<T, R>: Publisher {
 	typealias Item = R
 
 	private let mapper: (T) throws -> any Publisher<R>
@@ -27,7 +26,7 @@ class FlatMapPublisher<T, R>: Publisher {
 /// https://github.com/OpenCombine/OpenCombine/blob/master/Sources/OpenCombine/Publishers/Publishers.FlatMap.swift
 ///
 /// Only small changes were made to make it work with ReactiveStreams.
-class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
+final class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
 	typealias Item = T
 
 	private let mapper: (T) throws -> any Publisher<R>
@@ -39,9 +38,9 @@ class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
 	private let maxConcurrency: UInt
 
 	// locks
-	private let lock: NSLock = .init()
-	private let downstreamLock: NSRecursiveLock = .init()
-	private let outerLock: NSRecursiveLock = .init()
+	private let lock: UnfairLock = .allocate()
+	private let downstreamLock: UnfairRecursiveLock = .allocate()
+	private let outerLock: UnfairRecursiveLock = .allocate()
 
 	// states
 	private var buffer: [(Int, R)] = []
@@ -62,6 +61,12 @@ class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
 		self.mapper = mapper
 		self.actual = actual
 		self.maxConcurrency = maxConcurrency
+	}
+
+	deinit {
+		self.lock.deallocate()
+		self.downstreamLock.deallocate()
+		self.outerLock.deallocate()
 	}
 
 	func onSubscribe(_ subscription: some Subscription) {
@@ -144,7 +149,12 @@ class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
 	}
 
 	func request(_ demand: UInt) {
-		#validateDemand(demand, self.cancel, self.actual.onError)
+		if case let .failure(error) = Validator.demand(demand) {
+			self.cancel()
+			self.actual.onError(error)
+
+			return
+		}
 
 		if self.downstreamRecursive {
 			self.requested ~+= demand
@@ -291,7 +301,6 @@ class FluxFlatMapOperator<T, R>: Subscriber, Subscription {
 		self.done = true
 		self.lock.unlock()
 
-		// swiftlint:disable:next identifier_name
 		for (i, subscription) in self.subscriptions where i != index {
 			subscription.cancel()
 		}
@@ -375,8 +384,8 @@ public extension Flux {
 
 	func flatMap<R>(
 		maxConcurrency: UInt = .max,
-		_ mapper: @escaping (T) throws -> some AsPublisher<R>
+		_ mapper: @escaping (T) throws -> some PublisherConvertible<R>
 	) -> Flux<R> {
-		self.flatMap(maxConcurrency: maxConcurrency) { try mapper($0).asPublisher() }
+		self.flatMap(maxConcurrency: maxConcurrency) { try mapper($0).toPublisher() }
 	}
 }

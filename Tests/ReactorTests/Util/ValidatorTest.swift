@@ -1,20 +1,15 @@
-import Nimble
-import Quick
+import Testing
 
 @testable import Reactor
 
-class ValidatorTest: QuickSpec {
-	override class func spec() {
-		describe("Validator") {
-			describe("demand") {
-				it("should return failure when demand is 0") {
-					expect(Validator.demand(0)).to(beFailure())
-				}
+struct ValidatorTest {
+	@Test
+	func shouldReturnFailureWhenDemandIs0() {
+		#expect(Validator.demand(0) == .failure(.invalidDemand(0)))
+	}
 
-				it("should return success when demand is greater than 0") {
-					expect(Validator.demand(.max)).to(beSuccess())
-				}
-			}
-		}
+	@Test
+	func shouldReturnSuccessWhenDemandIsGreaterThan0() {
+		#expect(Validator.demand(1) == .success(1))
 	}
 }

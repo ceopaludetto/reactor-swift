@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-final class FluxTakeUntilPublisher<T>: Publisher {
+final class FluxSkipUntilPublisher<T>: Publisher {
 	typealias Item = T
 
 	private let predicate: (T) throws -> Bool
@@ -16,7 +16,7 @@ final class FluxTakeUntilPublisher<T>: Publisher {
 	}
 }
 
-final class FluxTakeUntilOperator<T>: BaseOperator, Subscriber, Subscription {
+final class FluxSkipUntilOperator<T>: BaseOperator, Subscriber, Subscription {
 	typealias Item = T
 
 	private let actual: any Subscriber<T>
@@ -71,7 +71,7 @@ final class FluxTakeUntilOperator<T>: BaseOperator, Subscriber, Subscription {
 }
 
 public extension Flux {
-	func takeUntil(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
-		Flux(publisher: FluxTakeUntilPublisher(predicate, publisher))
+	func skipUntil(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
+		Flux(publisher: FluxSkipUntilPublisher(predicate, publisher))
 	}
 }

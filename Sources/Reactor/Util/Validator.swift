@@ -1,4 +1,4 @@
-public enum ValidationError: Error {
+public enum ValidationError: Error, Equatable {
 	case invalidDemand(UInt)
 }
 
@@ -12,9 +12,9 @@ extension ValidationError: CustomStringConvertible {
 }
 
 enum Validator {
-	static func demand(_ demand: UInt) -> Result<UInt, Error> {
+	static func demand(_ demand: UInt) -> Result<UInt, ValidationError> {
 		if demand == 0 {
-			return .failure(ValidationError.invalidDemand(demand))
+			return .failure(.invalidDemand(demand))
 		}
 
 		return .success(demand)

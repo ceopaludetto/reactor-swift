@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-final class FluxTakeUntilPublisher<T>: Publisher {
+final class FluxSkipWhilePublisher<T>: Publisher {
 	typealias Item = T
 
 	private let predicate: (T) throws -> Bool
@@ -12,11 +12,11 @@ final class FluxTakeUntilPublisher<T>: Publisher {
 	}
 
 	func subscribe(_ subscriber: some Subscriber<Item>) {
-		self.source.subscribe(FluxTakeUntilOperator(self.predicate, subscriber))
+		self.source.subscribe(FluxTakeWhileOperator(self.predicate, subscriber))
 	}
 }
 
-final class FluxTakeUntilOperator<T>: BaseOperator, Subscriber, Subscription {
+final class FluxSkipWhileOperator<T>: BaseOperator, Subscriber, Subscription {
 	typealias Item = T
 
 	private let actual: any Subscriber<T>
@@ -36,15 +36,14 @@ final class FluxTakeUntilOperator<T>: BaseOperator, Subscriber, Subscription {
 
 	func onNext(_ element: T) {
 		self.tryLock(.next) {
-			self.actual.onNext(element)
-
 			runCatching(self.onError) {
 				if try self.predicate(element) {
-					self.subscription?.cancel()
-					self.onComplete()
+					self.request(1)
 
 					return
 				}
+
+				self.actual.onNext(element)
 			}
 		}
 	}
@@ -71,7 +70,7 @@ final class FluxTakeUntilOperator<T>: BaseOperator, Subscriber, Subscription {
 }
 
 public extension Flux {
-	func takeUntil(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
-		Flux(publisher: FluxTakeUntilPublisher(predicate, publisher))
+	func skipWhile(_ predicate: @escaping (T) throws -> Bool) -> Flux<T> {
+		Flux(publisher: FluxSkipWhilePublisher(predicate, publisher))
 	}
 }

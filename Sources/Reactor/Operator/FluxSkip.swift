@@ -1,30 +1,31 @@
 import ReactiveStreams
 
-final class FluxMapPublisher<T, R>: Publisher {
-	typealias Item = R
+final class FluxSkipPublisher<T>: Publisher {
+	typealias Item = T
 
-	private let mapper: (T) throws -> R
+	private let skip: UInt
 	private let source: any Publisher<T>
 
-	init(_ mapper: @escaping (T) throws -> R, _ publisher: some Publisher<T>) {
-		self.mapper = mapper
+	init(_ skip: UInt, _ publisher: some Publisher<T>) {
+		self.skip = skip
 		self.source = publisher
 	}
 
 	func subscribe(_ subscriber: some Subscriber<Item>) {
-		self.source.subscribe(FluxMapOperator(self.mapper, subscriber))
+		self.source.subscribe(FluxSkipOperator(self.skip, subscriber))
 	}
 }
 
-final class FluxMapOperator<T, R>: BaseOperator, Subscriber, Subscription {
+final class FluxSkipOperator<T>: BaseOperator, Subscriber, Subscription {
 	typealias Item = T
 
-	private let actual: any Subscriber<R>
+	private var actual: any Subscriber<T>
 
-	private let mapper: (T) throws -> R
+	private let skip: UInt
+	private var produced: UInt = 0
 
-	init(_ mapper: @escaping (T) throws -> R, _ actual: some Subscriber<R>) {
-		self.mapper = mapper
+	init(_ skip: UInt, _ actual: any Subscriber<T>) {
+		self.skip = skip
 		self.actual = actual
 	}
 
@@ -36,9 +37,12 @@ final class FluxMapOperator<T, R>: BaseOperator, Subscriber, Subscription {
 
 	func onNext(_ element: T) {
 		self.tryLock(.next) {
-			runCatching(self.onError) {
-				try self.actual.onNext(self.mapper(element))
+			if self.produced < self.skip {
+				self.produced += 1
+				return
 			}
+
+			self.actual.onNext(element)
 		}
 	}
 
@@ -64,7 +68,7 @@ final class FluxMapOperator<T, R>: BaseOperator, Subscriber, Subscription {
 }
 
 public extension Flux {
-	func map<R>(_ mapper: @escaping (T) throws -> R) -> Flux<R> {
-		Flux<R>(publisher: FluxMapPublisher(mapper, publisher))
+	func skip(_ skip: UInt) -> Flux<T> {
+		Flux<T>(publisher: FluxSkipPublisher(skip, publisher))
 	}
 }

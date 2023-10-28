@@ -1,39 +1,35 @@
-import Nimble
-import Quick
+import Testing
 
 @testable import Reactor
 
-class DemandTest: QuickSpec {
-	override class func spec() {
-		describe("Demand") {
-			describe("~+") {
-				it("should return correct sum when adding two demands") {
-					expect(1 ~+ 1).to(equal(2))
-				}
+struct DemandTest {
+	@Test
+	func shouldReturnCorrectSumWhenAddingTwoDemands() {
+		#expect(1 ~+ 1 == 2)
+	}
 
-				it("should return .max when overflow") {
-					expect(1 ~+ .max).to(equal(.max))
-					expect(.max ~+ .max).to(equal(.max))
-				}
-			}
+	@Test
+	func shouldReturnMaxWhenOverflowAddingTwoDemands() {
+		#expect(1 ~+ .max == .max)
+		#expect(.max ~+ .max == .max)
+	}
 
-			describe("~+=") {
-				it("should return correct sum when modifying demand") {
-					var demand: UInt = 1
-					demand ~+= 1
+	@Test
+	func shouldReturnCorrectSumWhenModifyingDemand() {
+		var demand: UInt = 1
+		demand ~+= 1
 
-					expect(demand).to(equal(2))
-				}
+		#expect(demand == 2)
+	}
 
-				it("should return .max when overflow") {
-					var demand: UInt = 1
-					demand ~+= .max
-					expect(demand).to(equal(.max))
+	@Test
+	func shouldReturnMaxWhenOverflowModifyingDemand() {
+		var demand: UInt = 1
+		demand ~+= .max
 
-					demand ~+= .max
-					expect(demand).to(equal(.max))
-				}
-			}
-		}
+		#expect(demand == .max)
+
+		demand ~+= .max
+		#expect(demand == .max)
 	}
 }

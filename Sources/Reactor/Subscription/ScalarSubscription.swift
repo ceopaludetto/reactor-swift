@@ -1,11 +1,10 @@
-import Foundation
 import ReactiveStreams
 
 class ScalarSubscription<T>: Subscription {
 	private var actual: any Subscriber<T>
 	private let item: T
 
-	private let lock: NSLock = .init()
+	private let lock: UnfairLock = .allocate()
 	private var cancelled: Bool = false
 
 	init(subscriber: any Subscriber<T>, item: T) {
@@ -13,8 +12,17 @@ class ScalarSubscription<T>: Subscription {
 		self.item = item
 	}
 
+	deinit {
+		self.lock.deallocate()
+	}
+
 	func request(_ demand: UInt) {
-		#validateDemand(demand, self.cancel, self.actual.onError)
+		if case let .failure(error) = Validator.demand(demand) {
+			self.cancel()
+			self.actual.onError(error)
+
+			return
+		}
 
 		self.lock.lock()
 		defer { lock.unlock() }

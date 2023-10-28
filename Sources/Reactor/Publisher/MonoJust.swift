@@ -1,6 +1,6 @@
 import ReactiveStreams
 
-class MonoJustPublisher<T>: Publisher {
+final class MonoJustPublisher<T>: Publisher {
 	typealias Item = T
 
 	private let item: T

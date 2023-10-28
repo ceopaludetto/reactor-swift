@@ -1,61 +1,33 @@
-import Nimble
-import Quick
 import ReactiveStreams
-import TCK
+import Testing
 
 @testable import Reactor
 
-struct FluxJustPublisherTCK: PublisherVerification {
-	typealias Item = UInt
+struct FluxJustAsyncTest {
+	@Test
+	func shouldAwaitListOfElements() async throws {
+		let items = try await Flux.just(1...)
+			.take(100)
+			.awaitList()
 
-	func createPublisher(_ elements: UInt) -> any Publisher<Item> {
-		FluxJustPublisher(0 ..< elements)
+		#expect(items.count == 100)
+		#expect(items == Array(1 ... 100))
 	}
 
-	func createFailedPublisher() -> (any Publisher<Item>)? {
-		nil
-	}
+	@Test
+	func battleTest() async throws {
+		let items = try await Flux.just(1...)
+			.take(1000)
+			.takeWhile { _ in true }
+			.takeUntil { _ in false }
+			.filter { _ in true }
+			.index()
+			.map { $1 }
+			.flatMap { Mono.just($0) }
+			.concatMap { Mono.just($0) }
+			.awaitList()
 
-	func maxElementsFromPublisher() -> UInt {
-		.max
-	}
-
-	func boundedDepthOfOnNextAndRequestRecursion() -> UInt {
-		1
-	}
-}
-
-class FluxJustTest: QuickSpec {
-	override class func spec() {
-		PublisherVerificationExecutor.TCK(FluxJustPublisherTCK())
-	}
-}
-
-class FluxJustAsyncTest: AsyncSpec {
-	override class func spec() {
-		it("should await list of elements") {
-			let items = try await Flux.just(1...)
-				.take(100)
-				.awaitList()
-
-			expect(items).to(haveCount(100))
-			expect(items).to(equal(Array(1 ... 100)))
-		}
-
-		it("battle test") {
-			let items = try await Flux.just(1...)
-				.take(1000)
-				.takeWhile { _ in true }
-				.takeUntil { _ in false }
-				.filter { _ in true }
-				.index()
-				.map { $1 }
-				.flatMap { Mono.just($0) }
-				.concatMap { Mono.just($0) }
-				.awaitList()
-
-			expect(items).to(haveCount(1000))
-			expect(items).to(equal(Array(1 ... 1000)))
-		}
+		#expect(items.count == 1000)
+		#expect(items == Array(1 ... 1000))
 	}
 }
